@@ -110,6 +110,22 @@
   .field select:hover{border-color:rgba(124,92,255,.5)}
   .field select:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")}
   .field select option{background:#141a35;color:var(--txt)}
+  /* custom select (rounded options) — native select kept as data source + fallback */
+  .csel{position:relative}
+  select.csel-native{display:none}
+  .csel-trigger{width:100%;text-align:left;background-color:rgba(0,0,0,.22);border:1px solid var(--glass-brd);color:var(--txt);padding:13px 15px;border-radius:13px;font-family:inherit;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:.25s;outline:none}
+  .csel-trigger:hover{border-color:rgba(124,92,255,.5)}
+  .csel.open .csel-trigger,.csel-trigger:focus-visible{border-color:var(--accent);box-shadow:0 0 0 4px rgba(124,92,255,.18);background-color:rgba(0,0,0,.3)}
+  .csel-trigger>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .csel-arr{color:var(--txt-dim);font-size:11px;transition:transform .25s,color .25s;flex-shrink:0}
+  .csel.open .csel-arr{transform:rotate(180deg);color:var(--accent)}
+  .csel-list{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:1200;padding:6px;border-radius:16px;background:linear-gradient(160deg,#161d3d,#10162f);border:1px solid var(--glass-brd);box-shadow:0 24px 60px -16px rgba(0,0,0,.75);backdrop-filter:blur(14px);max-height:260px;overflow-y:auto;opacity:0;transform:translateY(-6px) scale(.98);transform-origin:top;pointer-events:none;transition:.15s ease}
+  .csel.open .csel-list{opacity:1;transform:none;pointer-events:auto}
+  .csel-list::-webkit-scrollbar{width:6px}.csel-list::-webkit-scrollbar-thumb{background:var(--glass-brd);border-radius:10px}
+  .csel-item{padding:11px 13px;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;color:var(--txt);transition:.13s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .csel-item:hover{background:rgba(124,92,255,.2)}
+  .csel-item.sel{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+  .filter-row .csel-trigger{padding:10px 12px;font-size:13.5px;border-radius:11px}
   /* date preset chips */
   .date-presets{display:flex;gap:7px;flex-wrap:wrap}
   .date-presets button{background:rgba(0,0,0,.22);border:1px solid var(--glass-brd);color:var(--txt-dim);padding:7px 13px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;transition:.2s}
@@ -716,6 +732,31 @@ const datePicker=(function(){
     get(id){const r=reg[id];return r?r.iso:'';}
   };
 })();
+
+/* ===== Custom select (rounded option list; native select kept hidden as data source) ===== */
+function enhanceSelect(sel){
+  if(!sel||sel.dataset.enhanced)return;sel.dataset.enhanced='1';
+  const wrap=document.createElement('div');wrap.className='csel';
+  sel.parentNode.insertBefore(wrap,sel);wrap.appendChild(sel);sel.classList.add('csel-native');
+  const trigger=document.createElement('button');trigger.type='button';trigger.className='csel-trigger';
+  const lbl=document.createElement('span'),arr=document.createElement('span');arr.className='csel-arr';arr.textContent='▾';
+  trigger.appendChild(lbl);trigger.appendChild(arr);
+  const list=document.createElement('div');list.className='csel-list';
+  wrap.appendChild(trigger);wrap.appendChild(list);
+  const sync=()=>{const o=sel.options[sel.selectedIndex];lbl.textContent=o?o.textContent:'—';};
+  const build=()=>{list.innerHTML='';[...sel.options].forEach((o,i)=>{
+    const it=document.createElement('div');it.className='csel-item'+(i===sel.selectedIndex?' sel':'');it.textContent=o.textContent;
+    it.onclick=()=>{sel.selectedIndex=i;sel.dispatchEvent(new Event('change',{bubbles:true}));sync();close();};
+    list.appendChild(it);});};
+  const close=()=>wrap.classList.remove('open');
+  const open=()=>{closeAllCsel();build();wrap.classList.add('open');};
+  trigger.onclick=e=>{e.stopPropagation();wrap.classList.contains('open')?close():open();};
+  sel.addEventListener('change',sync);sel._cselSync=sync;sync();
+}
+function closeAllCsel(){document.querySelectorAll('.csel.open').forEach(w=>w.classList.remove('open'));}
+function syncCsels(){document.querySelectorAll('select.csel-native').forEach(s=>s._cselSync&&s._cselSync());}
+document.addEventListener('click',()=>closeAllCsel());
+
 const escapeHtml=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const walletById=id=>state.wallets.find(w=>w.id===id);
 const walletName=id=>{const w=walletById(id);return w?`${w.icon} ${w.name}`:'—';};
@@ -1183,7 +1224,7 @@ function renderCatFilterOptions(){
   sel.value=cur||'all';
 }
 
-function renderAll(){renderStats();renderWallets();renderList();renderChart();renderBudgetBanner();}
+function renderAll(){renderStats();renderWallets();renderList();renderChart();renderBudgetBanner();syncCsels();}
 
 function shake(el){el.style.animation='none';el.offsetHeight;el.style.animation='shake .4s';el.style.borderColor='var(--red)';setTimeout(()=>el.style.borderColor='',500);}
 
@@ -1229,6 +1270,7 @@ window.addEventListener('scroll',()=>{if($('#walletBreakdown').classList.contain
 for(let d=1;d<=28;d++){const o=document.createElement('option');o.value=d;o.textContent='Ngày '+d;$('#recDay').appendChild(o);}
 attachThousands($('#amtInput'));attachThousands($('#wInit'));attachThousands($('#recAmt'));attachThousands($('#trAmt'));attachThousands($('#budgetTotal'));
 renderFormCats();renderRecCats();renderWalletIcons();renderCatFilterOptions();
+document.querySelectorAll('.field select').forEach(enhanceSelect);syncCsels();
 
 // Tabs
 function activateTab(name){
@@ -1300,7 +1342,7 @@ $('#clearFilter').onclick=()=>{
   state.filter={q:'',type:'all',cat:'all',wallet:'all',from:'',to:''};
   $('#searchInput').value='';$('#catFilter').value='all';$('#walletFilter').value='all';datePicker.set('fromDate','');datePicker.set('toDate','');
   $('#typeChips').querySelectorAll('button').forEach(x=>x.classList.remove('on'));$('#typeChips').querySelector('[data-f=all]').classList.add('on');
-  clearDatePresets();
+  clearDatePresets();syncCsels();
   renderList();renderChart();
 };
 $('#exportBtn').onclick=exportCSV;
