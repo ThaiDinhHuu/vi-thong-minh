@@ -249,8 +249,19 @@
   .tx .info .d .wtag{background:rgba(255,255,255,.07);padding:1px 7px;border-radius:6px;font-size:11px}
   .tx .amt{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .tx .amt.in{color:var(--green)}.tx .amt.out{color:var(--red)}.tx .amt.tr{color:var(--accent-2)}
-  .tx .del{background:transparent;border:0;color:#5a6694;cursor:pointer;font-size:18px;padding:4px 8px;border-radius:8px;transition:.2s;opacity:0}
-  .tx:hover .del{opacity:1}.tx .del:hover{color:var(--red);background:rgba(255,107,139,.12)}
+  .tx .act{display:flex;align-items:center;gap:2px;flex-shrink:0}
+  .tx .del,.tx .edit{background:transparent;border:0;color:#5a6694;cursor:pointer;font-size:16px;padding:4px 8px;border-radius:8px;transition:.2s;opacity:0}
+  .tx:hover .del,.tx:hover .edit{opacity:1}
+  .tx .del:hover{color:var(--red);background:rgba(255,107,139,.12)}
+  .tx .edit:hover{color:var(--accent-2);background:rgba(34,211,238,.12)}
+  @media(hover:none){.tx .del,.tx .edit{opacity:.7}}
+  /* collapsible day groups */
+  .month-hdr{cursor:pointer;user-select:none}
+  .month-hdr .day-caret{font-size:10px;color:var(--txt-dim);transition:transform .25s;display:inline-block}
+  .month-hdr.collapsed .day-caret{transform:rotate(-90deg)}
+  .day-items{display:grid;grid-template-rows:1fr;transition:grid-template-rows .3s ease}
+  .day-items.collapsed{grid-template-rows:0fr}
+  .day-items>.di-inner{overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:10px}
   .empty{text-align:center;padding:50px 20px;color:var(--txt-dim)}
   .empty .e{font-size:48px;margin-bottom:12px;animation:pop .5s}
 
@@ -433,7 +444,7 @@
       <div class="grid">
         <div style="display:flex;flex-direction:column;gap:18px">
           <div class="panel glass">
-            <div class="list-head"><h2><span class="dot"></span> Lịch sử giao dịch</h2></div>
+            <div class="list-head"><h2><span class="dot"></span> Lịch sử giao dịch</h2><button class="mini-btn" id="collapseAll" title="Gập/mở tất cả ngày">⊟ Thu gọn</button></div>
             <div class="toolbar">
               <div class="search"><span class="si">🔍</span><input id="searchInput" placeholder="Tìm theo mô tả giao dịch…" /></div>
               <div class="chips" id="typeChips">
@@ -587,6 +598,36 @@
       <div class="modal-actions">
         <button class="btn-ghost" id="ewCancel">Huỷ</button>
         <button class="btn-grad" id="ewSave" style="box-shadow:none">💾 Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EDIT TRANSACTION MODAL ===== -->
+  <div class="modal-bg" id="editTxModal">
+    <div class="glass modal">
+      <h3>✏️ Sửa giao dịch</h3>
+      <div id="etNormal">
+        <div class="seg" id="etSeg"><div class="slider"></div>
+          <button data-type="expense">Chi tiêu</button>
+          <button data-type="income">Thu nhập</button>
+        </div>
+        <div class="cats" id="etCats"></div>
+      </div>
+      <div id="etTransfer" style="display:none">
+        <div class="row2">
+          <div class="field"><label>Từ ví</label><select id="etFrom"></select></div>
+          <div class="field"><label>Đến ví</label><select id="etTo"></select></div>
+        </div>
+      </div>
+      <div class="field"><label>Mô tả</label><input id="etDesc" maxlength="40" placeholder="Mô tả giao dịch" /></div>
+      <div class="row2">
+        <div class="field"><label>Số tiền (₫)</label><input id="etAmt" type="text" inputmode="numeric" autocomplete="off" placeholder="0" /></div>
+        <div class="field"><label>Ngày</label><input id="etDate" type="date" /></div>
+      </div>
+      <div class="field" id="etWalletField"><label>Ví</label><select id="etWallet"></select></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="etCancel">Huỷ</button>
+        <button class="btn-grad" id="etSave" style="box-shadow:none">💾 Lưu thay đổi</button>
       </div>
     </div>
   </div>
@@ -1049,10 +1090,14 @@ function renderList(){
     const exp=g.items.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
     const net=inc-exp;
     const dh=dayHeaderInfo(g.key);
-    const hdr=document.createElement('div');hdr.className='month-hdr';
-    hdr.innerHTML=`<div class="mt">${dh.tag?`<span class="rel">${dh.tag}</span>`:'📅'} <span class="wd">${dh.wd}</span> ${dh.dd} <span class="cnt">${g.items.length} GD</span></div>
+    const collapsed=collapsedDays.has(g.key);
+    const hdr=document.createElement('div');hdr.className='month-hdr'+(collapsed?' collapsed':'');
+    hdr.innerHTML=`<div class="mt"><span class="day-caret">▾</span> ${dh.tag?`<span class="rel">${dh.tag}</span>`:'📅'} <span class="wd">${dh.wd}</span> ${dh.dd} <span class="cnt">${g.items.length} GD</span></div>
       <div class="net ${net>=0?'in':'out'}">${net>=0?'+':'−'}${fmt(Math.abs(net))}</div>`;
     list.appendChild(hdr);
+    const dayWrap=document.createElement('div');dayWrap.className='day-items'+(collapsed?' collapsed':'');
+    const inner=document.createElement('div');inner.className='di-inner';dayWrap.appendChild(inner);
+    hdr.onclick=()=>toggleDay(g.key,hdr,dayWrap);
     g.items.forEach(t=>{
       const el=document.createElement('div');el.className='tx';el.style.animationDelay=(idx++*0.02)+'s';
       let emo,title,sub,amtCls,amtTxt;
@@ -1069,11 +1114,18 @@ function renderList(){
       el.innerHTML=`<div class="emo">${emo}</div>
         <div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div>
         <div class="amt ${amtCls}">${amtTxt}</div>
-        <button class="del" title="Xoá">✕</button>`;
+        <div class="act"><button class="edit" title="Sửa">✎</button><button class="del" title="Xoá">✕</button></div>`;
+      el.querySelector('.edit').onclick=()=>openTxEdit(t);
       el.querySelector('.del').onclick=()=>removeTx(t.id);
-      list.appendChild(el);
+      inner.appendChild(el);
     });
+    list.appendChild(dayWrap);
   });
+}
+let collapsedDays=new Set();
+function toggleDay(key,hdr,wrap){
+  if(collapsedDays.has(key)){collapsedDays.delete(key);hdr.classList.remove('collapsed');wrap.classList.remove('collapsed');}
+  else{collapsedDays.add(key);hdr.classList.add('collapsed');wrap.classList.add('collapsed');}
 }
 
 /* ===== Render: chart (based on filtered expenses) ===== */
@@ -1116,7 +1168,7 @@ function renderWallets(){
   });
   // populate wallet selectors
   const opts=state.wallets.map(w=>`<option value="${w.id}">${w.icon} ${escapeHtml(w.name)}</option>`).join('');
-  ['#walletInput','#recWallet','#trFrom','#trTo'].forEach(sel=>{
+  ['#walletInput','#recWallet','#trFrom','#trTo','#etWallet','#etFrom','#etTo'].forEach(sel=>{
     const e=$(sel);if(!e)return;const cur=e.value;e.innerHTML=opts;
     if([...e.options].some(o=>o.value===cur))e.value=cur;
   });
@@ -1152,6 +1204,53 @@ async function saveWalletEdit(){
   try{
     await updateDoc(doc(db,'users',currentUser.uid,'wallets',editWalletId),{name,icon:ewIcon,initial});
     $('#walletModal').classList.remove('show');toast('💾 Đã cập nhật ví');
+  }catch(e){console.error(e);toast('⚠️ Cập nhật thất bại','danger');}
+}
+
+/* ----- Edit transaction ----- */
+let editTxId=null, etType='expense', etCat='food';
+function renderEtCats(){buildCats('#etCats',etType,etCat,id=>{etCat=id;renderEtCats();});}
+function openTxEdit(t){
+  editTxId=t.id;
+  const isTr=t.type==='transfer';
+  $('#etNormal').style.display=isTr?'none':'';
+  $('#etTransfer').style.display=isTr?'':'none';
+  $('#etWalletField').style.display=isTr?'none':'';
+  $('#etDesc').value=t.desc||'';
+  $('#etAmt').value=t.amount?Number(t.amount).toLocaleString('en-US'):'';
+  datePicker.set('etDate',t.date||todayISO());
+  if(isTr){
+    $('#etFrom').value=t.fromWallet||'';$('#etTo').value=t.toWallet||'';
+  }else{
+    etType=(t.type==='income')?'income':'expense';
+    etCat=t.cat||CATS[etType][0].id;
+    $('#etSeg').classList.toggle('exp',etType==='income');
+    $('#etSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===etType));
+    renderEtCats();
+    $('#etWallet').value=t.walletId||'';
+  }
+  syncCsels();
+  $('#editTxModal').classList.add('show');
+}
+async function saveTxEdit(){
+  if(!editTxId||!currentUser)return;
+  const amount=num($('#etAmt').value);
+  if(amount<=0){toast('⚠️ Nhập số tiền hợp lệ','warn');shake($('#etAmt'));return;}
+  const date=datePicker.get('etDate')||todayISO();
+  const desc=$('#etDesc').value.trim();
+  const isTr=$('#etTransfer').style.display!=='none';
+  let data;
+  if(isTr){
+    const from=$('#etFrom').value,to=$('#etTo').value;
+    if(!from||!to||from===to){toast('⚠️ Chọn hai ví khác nhau','warn');return;}
+    data={amount,date,desc,fromWallet:from,toWallet:to};
+  }else{
+    data={type:etType,cat:etCat,amount,date,desc,walletId:$('#etWallet').value||''};
+  }
+  try{
+    await updateDoc(doc(db,'users',currentUser.uid,'transactions',editTxId),data);
+    $('#editTxModal').classList.remove('show');toast('💾 Đã cập nhật giao dịch');
+    if(!isTr&&etType==='expense')checkBudgetWarning(date);
   }catch(e){console.error(e);toast('⚠️ Cập nhật thất bại','danger');}
 }
 
@@ -1435,6 +1534,26 @@ attachThousands($('#ewInit'));
 $('#ewCancel').onclick=()=>$('#walletModal').classList.remove('show');
 $('#ewSave').onclick=saveWalletEdit;
 $('#walletModal').addEventListener('click',e=>{if(e.target===$('#walletModal'))$('#walletModal').classList.remove('show');});
+
+// Edit transaction modal
+attachThousands($('#etAmt'));datePicker.attach($('#etDate'));
+$('#etSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  etType=b.dataset.type;etCat=CATS[etType][0].id;
+  $('#etSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));
+  $('#etSeg').classList.toggle('exp',etType==='income');renderEtCats();
+});
+$('#etCancel').onclick=()=>$('#editTxModal').classList.remove('show');
+$('#etSave').onclick=saveTxEdit;
+$('#editTxModal').addEventListener('click',e=>{if(e.target===$('#editTxModal'))$('#editTxModal').classList.remove('show');});
+
+// Collapse / expand all day groups
+$('#collapseAll').onclick=()=>{
+  const keys=[...new Set(applyFilters().map(t=>t.date||'(không ngày)'))];
+  const allCollapsed=keys.length&&keys.every(k=>collapsedDays.has(k));
+  if(allCollapsed)collapsedDays.clear();else keys.forEach(k=>collapsedDays.add(k));
+  $('#collapseAll').innerHTML=allCollapsed?'⊟ Thu gọn':'⊞ Mở rộng';
+  renderList();
+};
 
 // Confirm modal
 $('#confirmCancel').onclick=()=>resolveConfirm(false);
