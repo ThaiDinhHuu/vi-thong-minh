@@ -227,15 +227,26 @@
   .dp-foot .dp-clear:hover{background:rgba(255,107,139,.12);color:var(--red)}
 
   /* month divider above day groups */
-  .month-divider{display:flex;align-items:center;gap:10px;margin:14px 2px 4px;font-size:11.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--txt-dim)}
-  .month-divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--glass-brd),transparent)}
+  .month-block{display:flex;flex-direction:column}
+  .month-divider{display:flex;align-items:center;gap:10px;margin:4px 0 2px;padding:12px 15px;border-radius:18px;cursor:pointer;user-select:none;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 18%,transparent),color-mix(in srgb,var(--accent-2) 11%,transparent));border:1px solid var(--glass-brd);transition:.22s}
+  .month-divider:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .month-divider .m-caret{font-size:11px;color:var(--accent-2);transition:transform .25s;display:inline-block}
+  .month-divider.collapsed .m-caret{transform:rotate(-90deg)}
+  .month-divider .m-name{font-weight:800;font-size:12.5px;letter-spacing:.4px;text-transform:uppercase;color:var(--txt)}
+  .month-divider .m-cnt{font-weight:600;font-size:11px;color:var(--txt-dim);background:rgba(255,255,255,.07);padding:2px 9px;border-radius:20px}
+  .month-divider .m-net{margin-left:auto;font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
+  .month-divider .m-net.in{color:var(--green)}.month-divider .m-net.out{color:var(--red)}
+  .month-body{display:grid;grid-template-rows:1fr;transition:grid-template-rows .3s ease}
+  .month-body.collapsed{grid-template-rows:0fr}
+  .month-body>.mb-inner{overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:10px;padding-top:10px}
   .month-hdr .mt .rel{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-weight:800;font-size:10.5px;padding:2px 8px;border-radius:20px;letter-spacing:.2px}
   .month-hdr .mt .wd{color:var(--txt-dim);font-weight:600}
 
   .list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
   .tx-list{display:flex;flex-direction:column;gap:10px;max-height:560px;overflow-y:auto;padding-right:4px}
   .tx-list::-webkit-scrollbar{width:6px}.tx-list::-webkit-scrollbar-thumb{background:var(--glass-brd);border-radius:10px}
-  .month-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 2px;padding:9px 4px;position:sticky;top:0;z-index:2;background:linear-gradient(180deg,rgba(15,21,48,.96),rgba(15,21,48,.75));backdrop-filter:blur(6px)}
+  .month-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid transparent;backdrop-filter:blur(6px);transition:.2s}
+  .month-hdr:hover{background:rgba(255,255,255,.07);border-color:var(--glass-brd)}
   .month-hdr .mt{font-size:13px;font-weight:800;display:flex;align-items:center;gap:8px}
   .month-hdr .mt .cnt{font-weight:600;font-size:11px;color:var(--txt-dim);background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px}
   .month-hdr .net{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
@@ -1080,52 +1091,70 @@ function renderList(){
   const list=$('#txList');
   const txs=applyFilters();
   if(!txs.length){list.innerHTML=`<div class="empty"><div class="e">🪶</div>Không có giao dịch phù hợp.<br>Thử đổi bộ lọc hoặc thêm giao dịch mới.</div>`;return;}
-  const groups=[],map={};
-  txs.forEach(t=>{const k=t.date||'(không ngày)';if(!map[k]){map[k]={key:k,items:[]};groups.push(map[k]);}map[k].items.push(t);});
-  list.innerHTML='';let idx=0,lastMonth=null;
-  groups.forEach(g=>{
-    const mk=monthKey(g.key);
-    if(mk!==lastMonth){lastMonth=mk;const md=document.createElement('div');md.className='month-divider';md.innerHTML=`<span>${monthLabel(mk)}</span>`;list.appendChild(md);}
-    const inc=g.items.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-    const exp=g.items.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-    const net=inc-exp;
-    const dh=dayHeaderInfo(g.key);
-    const collapsed=collapsedDays.has(g.key);
-    const hdr=document.createElement('div');hdr.className='month-hdr'+(collapsed?' collapsed':'');
-    hdr.innerHTML=`<div class="mt"><span class="day-caret">▾</span> ${dh.tag?`<span class="rel">${dh.tag}</span>`:'📅'} <span class="wd">${dh.wd}</span> ${dh.dd} <span class="cnt">${g.items.length} GD</span></div>
-      <div class="net ${net>=0?'in':'out'}">${net>=0?'+':'−'}${fmt(Math.abs(net))}</div>`;
-    list.appendChild(hdr);
-    const dayWrap=document.createElement('div');dayWrap.className='day-items'+(collapsed?' collapsed':'');
-    const inner=document.createElement('div');inner.className='di-inner';dayWrap.appendChild(inner);
-    hdr.onclick=()=>toggleDay(g.key,hdr,dayWrap);
-    g.items.forEach(t=>{
-      const el=document.createElement('div');el.className='tx';el.style.animationDelay=(idx++*0.02)+'s';
-      let emo,title,sub,amtCls,amtTxt;
-      if(t.type==='transfer'){
-        emo='🔄';title=escapeHtml(t.desc)||'Chuyển tiền';
-        sub=`${walletName(t.fromWallet)} → ${walletName(t.toWallet)}`;
-        amtCls='tr';amtTxt=fmt(t.amount);
-      }else{
-        const ci=catInfo(t.type,t.cat);emo=ci.emo;title=escapeHtml(t.desc)||ci.name;
-        sub=`${ci.name}`;amtCls=t.type==='income'?'in':'out';
-        amtTxt=(t.type==='income'?'+':'−')+fmt(t.amount);
-      }
-      const wtag=t.type!=='transfer'&&t.walletId?`<span class="wtag">${walletName(t.walletId)}</span>`:'';
-      el.innerHTML=`<div class="emo">${emo}</div>
-        <div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div>
-        <div class="amt ${amtCls}">${amtTxt}</div>
-        <div class="act"><button class="edit" title="Sửa">✎</button><button class="del" title="Xoá">✕</button></div>`;
-      el.querySelector('.edit').onclick=()=>openTxEdit(t);
-      el.querySelector('.del').onclick=()=>removeTx(t.id);
-      inner.appendChild(el);
+  // group by month -> day
+  const months=[],mMap={};
+  txs.forEach(t=>{
+    const mk=monthKey(t.date), dk=t.date||'(không ngày)';
+    let m=mMap[mk];if(!m){m=mMap[mk]={key:mk,days:[],dMap:{},items:[]};months.push(m);}
+    m.items.push(t);
+    let d=m.dMap[dk];if(!d){d=m.dMap[dk]={key:dk,items:[]};m.days.push(d);}
+    d.items.push(t);
+  });
+  list.innerHTML='';let idx=0;
+  months.forEach(m=>{
+    const mNet=m.items.reduce((s,t)=>s+(t.type==='income'?t.amount:t.type==='expense'?-t.amount:0),0);
+    const mCol=collapsedMonths.has(m.key);
+    const block=document.createElement('div');block.className='month-block';
+    const mhdr=document.createElement('div');mhdr.className='month-divider'+(mCol?' collapsed':'');
+    mhdr.innerHTML=`<span class="m-caret">▾</span><span class="m-name">${monthLabel(m.key)}</span>`
+      +`<span class="m-cnt">${m.items.length} GD</span>`
+      +`<span class="m-net ${mNet>=0?'in':'out'}">${mNet>=0?'+':'−'}${fmt(Math.abs(mNet))}</span>`;
+    block.appendChild(mhdr);
+    const mbody=document.createElement('div');mbody.className='month-body'+(mCol?' collapsed':'');
+    const mInner=document.createElement('div');mInner.className='mb-inner';mbody.appendChild(mInner);
+    mhdr.onclick=()=>toggleCollapse(collapsedMonths,m.key,mhdr,mbody);
+    m.days.forEach(g=>{
+      const net=g.items.reduce((s,t)=>s+(t.type==='income'?t.amount:t.type==='expense'?-t.amount:0),0);
+      const dh=dayHeaderInfo(g.key);
+      const dCol=collapsedDays.has(g.key);
+      const hdr=document.createElement('div');hdr.className='month-hdr'+(dCol?' collapsed':'');
+      hdr.innerHTML=`<div class="mt"><span class="day-caret">▾</span> ${dh.tag?`<span class="rel">${dh.tag}</span>`:'📅'} <span class="wd">${dh.wd}</span> ${dh.dd} <span class="cnt">${g.items.length} GD</span></div>
+        <div class="net ${net>=0?'in':'out'}">${net>=0?'+':'−'}${fmt(Math.abs(net))}</div>`;
+      mInner.appendChild(hdr);
+      const dayWrap=document.createElement('div');dayWrap.className='day-items'+(dCol?' collapsed':'');
+      const inner=document.createElement('div');inner.className='di-inner';dayWrap.appendChild(inner);
+      hdr.onclick=()=>toggleCollapse(collapsedDays,g.key,hdr,dayWrap);
+      g.items.forEach(t=>{
+        const el=document.createElement('div');el.className='tx';el.style.animationDelay=(idx++*0.02)+'s';
+        let emo,title,sub,amtCls,amtTxt;
+        if(t.type==='transfer'){
+          emo='🔄';title=escapeHtml(t.desc)||'Chuyển tiền';
+          sub=`${walletName(t.fromWallet)} → ${walletName(t.toWallet)}`;
+          amtCls='tr';amtTxt=fmt(t.amount);
+        }else{
+          const ci=catInfo(t.type,t.cat);emo=ci.emo;title=escapeHtml(t.desc)||ci.name;
+          sub=`${ci.name}`;amtCls=t.type==='income'?'in':'out';
+          amtTxt=(t.type==='income'?'+':'−')+fmt(t.amount);
+        }
+        const wtag=t.type!=='transfer'&&t.walletId?`<span class="wtag">${walletName(t.walletId)}</span>`:'';
+        el.innerHTML=`<div class="emo">${emo}</div>
+          <div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div>
+          <div class="amt ${amtCls}">${amtTxt}</div>
+          <div class="act"><button class="edit" title="Sửa">✎</button><button class="del" title="Xoá">✕</button></div>`;
+        el.querySelector('.edit').onclick=()=>openTxEdit(t);
+        el.querySelector('.del').onclick=()=>removeTx(t.id);
+        inner.appendChild(el);
+      });
+      mInner.appendChild(dayWrap);
     });
-    list.appendChild(dayWrap);
+    block.appendChild(mbody);
+    list.appendChild(block);
   });
 }
-let collapsedDays=new Set();
-function toggleDay(key,hdr,wrap){
-  if(collapsedDays.has(key)){collapsedDays.delete(key);hdr.classList.remove('collapsed');wrap.classList.remove('collapsed');}
-  else{collapsedDays.add(key);hdr.classList.add('collapsed');wrap.classList.add('collapsed');}
+let collapsedDays=new Set(), collapsedMonths=new Set();
+function toggleCollapse(set,key,hdr,wrap){
+  if(set.has(key)){set.delete(key);hdr.classList.remove('collapsed');wrap.classList.remove('collapsed');}
+  else{set.add(key);hdr.classList.add('collapsed');wrap.classList.add('collapsed');}
 }
 
 /* ===== Render: chart (based on filtered expenses) ===== */
@@ -1546,11 +1575,11 @@ $('#etCancel').onclick=()=>$('#editTxModal').classList.remove('show');
 $('#etSave').onclick=saveTxEdit;
 $('#editTxModal').addEventListener('click',e=>{if(e.target===$('#editTxModal'))$('#editTxModal').classList.remove('show');});
 
-// Collapse / expand all day groups
+// Collapse / expand all months
 $('#collapseAll').onclick=()=>{
-  const keys=[...new Set(applyFilters().map(t=>t.date||'(không ngày)'))];
-  const allCollapsed=keys.length&&keys.every(k=>collapsedDays.has(k));
-  if(allCollapsed)collapsedDays.clear();else keys.forEach(k=>collapsedDays.add(k));
+  const keys=[...new Set(applyFilters().map(t=>monthKey(t.date)))];
+  const allCollapsed=keys.length&&keys.every(k=>collapsedMonths.has(k));
+  if(allCollapsed)collapsedMonths.clear();else keys.forEach(k=>collapsedMonths.add(k));
   $('#collapseAll').innerHTML=allCollapsed?'⊟ Thu gọn':'⊞ Mở rộng';
   renderList();
 };
