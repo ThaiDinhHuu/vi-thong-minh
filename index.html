@@ -17,21 +17,28 @@
     --bg-0:#0b1020; --bg-1:#0f1530;
     --glass:rgba(255,255,255,.06); --glass-brd:rgba(255,255,255,.12);
     --txt:#eef2ff; --txt-dim:#9aa6d6;
-    --accent:#7c5cff; --accent-2:#22d3ee;
+    --accent:#7c5cff; --accent-2:#22d3ee; --blob-c:#ff6bcb;
     --green:#34e0a1; --red:#ff6b8b; --amber:#ffb86b;
     --shadow:0 20px 60px -20px rgba(0,0,0,.6); --radius:22px;
   }
+  /* ---- Color themes (applied via html[data-theme]) ---- */
+  html[data-theme="ocean"]{--bg-0:#08111f;--bg-1:#0b1b34;--accent:#3b82f6;--accent-2:#22d3ee;--blob-c:#6366f1}
+  html[data-theme="forest"]{--bg-0:#07160f;--bg-1:#0b241a;--accent:#10b981;--accent-2:#34e0a1;--blob-c:#22d3ee}
+  html[data-theme="sunset"]{--bg-0:#1a0e12;--bg-1:#23121a;--accent:#fb7185;--accent-2:#fbbf24;--blob-c:#f472b6}
+  html[data-theme="sakura"]{--bg-0:#160b1a;--bg-1:#220f28;--accent:#ec4899;--accent-2:#a78bfa;--blob-c:#f0abfc}
+  html[data-theme="ruby"]{--bg-0:#1a0c0c;--bg-1:#241010;--accent:#ef4444;--accent-2:#fb923c;--blob-c:#f43f5e}
+  html[data-theme="midnight"]{--bg-0:#0a0e1a;--bg-1:#101426;--accent:#64748b;--accent-2:#38bdf8;--blob-c:#818cf8}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--txt);background:var(--bg-0);overflow-x:hidden;min-height:100vh}
-  .bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
-      radial-gradient(1200px 600px at 80% -10%,rgba(124,92,255,.25),transparent 60%),
-      radial-gradient(1000px 500px at 0% 100%,rgba(34,211,238,.18),transparent 55%),
+  .bg{position:fixed;inset:0;z-index:-2;overflow:hidden;transition:background .5s ease;background:
+      radial-gradient(1200px 600px at 80% -10%,color-mix(in srgb,var(--accent) 26%,transparent),transparent 60%),
+      radial-gradient(1000px 500px at 0% 100%,color-mix(in srgb,var(--accent-2) 18%,transparent),transparent 55%),
       linear-gradient(160deg,var(--bg-0),var(--bg-1))}
-  .blob{position:absolute;border-radius:50%;filter:blur(48px);opacity:.5;mix-blend-mode:screen;will-change:transform;transform:translateZ(0);animation:float 22s ease-in-out infinite}
-  .blob.a{width:420px;height:420px;background:#7c5cff;top:-120px;left:-80px}
-  .blob.b{width:360px;height:360px;background:#22d3ee;bottom:-120px;right:-60px;animation-delay:-6s}
-  .blob.c{width:300px;height:300px;background:#ff6bcb;top:40%;left:55%;animation-delay:-11s}
+  .blob{position:absolute;border-radius:50%;filter:blur(48px);opacity:.5;mix-blend-mode:screen;will-change:transform;transform:translateZ(0);animation:float 22s ease-in-out infinite;transition:background .5s ease}
+  .blob.a{width:420px;height:420px;background:var(--accent);top:-120px;left:-80px}
+  .blob.b{width:360px;height:360px;background:var(--accent-2);bottom:-120px;right:-60px;animation-delay:-6s}
+  .blob.c{width:300px;height:300px;background:var(--blob-c);top:40%;left:55%;animation-delay:-11s}
   @keyframes float{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-30px,25px) scale(.95)}}
 
   .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
@@ -77,6 +84,17 @@
   .wallet-pop.open{opacity:1;transform:none;pointer-events:auto}
   .wallet-pop::-webkit-scrollbar{width:6px}.wallet-pop::-webkit-scrollbar-thumb{background:var(--glass-brd);border-radius:10px}
   .wp-head{font-size:12.5px;font-weight:800;color:var(--txt-dim);margin-bottom:6px;letter-spacing:.3px}
+  /* theme picker */
+  .theme-btn:hover{color:var(--accent-2)!important;border-color:var(--accent-2)!important}
+  .theme-pop{position:fixed;z-index:1500;width:248px;padding:14px 16px;border-radius:18px;background:linear-gradient(160deg,#161d3d,#10162f);border:1px solid var(--glass-brd);box-shadow:0 24px 60px -16px rgba(0,0,0,.75);backdrop-filter:blur(14px);opacity:0;transform:translateY(-6px) scale(.97);transform-origin:top right;pointer-events:none;transition:.16s ease}
+  .theme-pop.open{opacity:1;transform:none;pointer-events:auto}
+  .theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .theme-sw{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--glass-brd);border-radius:12px;background:rgba(0,0,0,.2);cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--txt);transition:.16s}
+  .theme-sw:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .theme-sw.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,92,255,.18)}
+  .theme-sw .dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;box-shadow:0 3px 8px -2px rgba(0,0,0,.5)}
+  .theme-sw .chk{margin-left:auto;font-size:12px;opacity:0;transition:.16s}
+  .theme-sw.on .chk{opacity:1}
   .wb-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--glass-brd)}
   .wb-row:first-child{border-top:0}
   .wb-ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:15px;flex-shrink:0}
@@ -332,6 +350,7 @@
   @media(max-width:900px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr}}
   @media(max-width:560px){.cats{grid-template-columns:repeat(3,1fr)}.filter-row{grid-template-columns:1fr}}
 </style>
+<script>try{var _t=localStorage.getItem('vtm_theme');if(_t)document.documentElement.dataset.theme=_t;}catch(e){}</script>
 </head>
 <body>
   <div class="bg"><div class="blob a"></div><div class="blob b"></div><div class="blob c"></div></div>
@@ -372,6 +391,7 @@
       <div class="userbox">
         <div class="av" id="userAv">U</div>
         <div class="nm" id="userName">—<small id="userEmail"></small></div>
+        <button class="icon-btn theme-btn" id="themeBtn" title="Đổi giao diện">🎨 Giao diện</button>
         <button class="icon-btn" id="logoutBtn">↩ Đăng xuất</button>
       </div>
     </header>
@@ -590,6 +610,11 @@
     <div class="wb-inner" id="walletBreakInner"></div>
   </div>
 
+  <div class="theme-pop" id="themePop">
+    <div class="wp-head">🎨 Chọn giao diện</div>
+    <div class="theme-grid" id="themeGrid"></div>
+  </div>
+
 <script type="module">
 import { firebaseConfig } from './firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -756,6 +781,34 @@ function enhanceSelect(sel){
 function closeAllCsel(){document.querySelectorAll('.csel.open').forEach(w=>w.classList.remove('open'));}
 function syncCsels(){document.querySelectorAll('select.csel-native').forEach(s=>s._cselSync&&s._cselSync());}
 document.addEventListener('click',()=>closeAllCsel());
+
+/* ===== Color themes ===== */
+const THEMES=[
+  {key:'',        name:'Tím',       c1:'#7c5cff',c2:'#22d3ee'},
+  {key:'ocean',   name:'Đại dương', c1:'#3b82f6',c2:'#22d3ee'},
+  {key:'forest',  name:'Rừng xanh', c1:'#10b981',c2:'#34e0a1'},
+  {key:'sunset',  name:'Hoàng hôn', c1:'#fb7185',c2:'#fbbf24'},
+  {key:'sakura',  name:'Anh đào',   c1:'#ec4899',c2:'#a78bfa'},
+  {key:'ruby',    name:'Hồng ngọc', c1:'#ef4444',c2:'#fb923c'},
+  {key:'midnight',name:'Đêm',       c1:'#64748b',c2:'#38bdf8'}
+];
+const currentTheme=()=>document.documentElement.dataset.theme||'';
+function applyTheme(key){
+  if(key)document.documentElement.dataset.theme=key;else delete document.documentElement.dataset.theme;
+  try{localStorage.setItem('vtm_theme',key);}catch(e){}
+  const tc=document.querySelector('meta[name=theme-color]');
+  if(tc)tc.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--bg-0').trim()||'#0b1020');
+  buildThemeGrid();
+}
+function buildThemeGrid(){
+  const grid=$('#themeGrid');if(!grid)return;const cur=currentTheme();grid.innerHTML='';
+  THEMES.forEach(t=>{
+    const b=document.createElement('button');b.type='button';b.className='theme-sw'+(t.key===cur?' on':'');
+    b.innerHTML=`<span class="dot" style="background:linear-gradient(135deg,${t.c1},${t.c2})"></span>${t.name}<span class="chk">✓</span>`;
+    b.onclick=()=>applyTheme(t.key);
+    grid.appendChild(b);
+  });
+}
 
 const escapeHtml=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const walletById=id=>state.wallets.find(w=>w.id===id);
@@ -1267,6 +1320,20 @@ $('#walletToggle').onclick=e=>{
 document.addEventListener('click',e=>{const pop=$('#walletBreakdown');if(pop.classList.contains('open')&&!pop.contains(e.target)&&e.target!==$('#walletToggle'))closeWalletPop();});
 window.addEventListener('resize',closeWalletPop);
 window.addEventListener('scroll',()=>{if($('#walletBreakdown').classList.contains('open'))placeWalletPop();},true);
+
+// Theme picker
+function placeThemePop(){
+  const btn=$('#themeBtn'),pop=$('#themePop');if(!pop.classList.contains('open'))return;
+  const r=btn.getBoundingClientRect(),w=248,vw=document.documentElement.clientWidth;
+  let left=r.right-w;if(left+w>vw-10)left=vw-w-10;if(left<10)left=10;
+  pop.style.left=left+'px';pop.style.top=(r.bottom+8)+'px';
+}
+function closeThemePop(){$('#themePop').classList.remove('open');}
+$('#themeBtn').onclick=e=>{e.stopPropagation();const open=$('#themePop').classList.toggle('open');if(open){buildThemeGrid();placeThemePop();}};
+document.addEventListener('click',e=>{const p=$('#themePop'),b=$('#themeBtn');if(p.classList.contains('open')&&!p.contains(e.target)&&!b.contains(e.target))closeThemePop();});
+window.addEventListener('resize',closeThemePop);
+window.addEventListener('scroll',()=>{if($('#themePop').classList.contains('open'))placeThemePop();},true);
+buildThemeGrid();
 for(let d=1;d<=28;d++){const o=document.createElement('option');o.value=d;o.textContent='Ngày '+d;$('#recDay').appendChild(o);}
 attachThousands($('#amtInput'));attachThousands($('#wInit'));attachThousands($('#recAmt'));attachThousands($('#trAmt'));attachThousands($('#budgetTotal'));
 renderFormCats();renderRecCats();renderWalletIcons();renderCatFilterOptions();
