@@ -1,5 +1,6 @@
 {
-  "dependencies": {
-    "firebase": "^12.15.0"
-  }
+  "name": "vi-thong-minh",
+  "version": "1.0.0",
+  "description": "Ứng dụng quản lý chi tiêu cá nhân — Firebase + Chart.js",
+  "private": true
 }
