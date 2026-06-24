@@ -1262,7 +1262,7 @@ function applyMode(m){
 applyMode(document.documentElement.dataset.mode||'light');
 $('#modeBtn').onclick=()=>{
   const next=document.documentElement.dataset.mode==='dark'?'light':'dark';
-  circleReveal($('#modeBtn'),()=>applyMode(next),{expand:next==='dark',duration:1500});
+  circleReveal($('#modeBtn'),()=>applyMode(next),{expand:next==='dark',duration:2000});
 };
 $('#themeBtn').onclick=e=>{e.stopPropagation();const open=$('#themePop').classList.toggle('open');if(open){buildThemeGrid();placeThemePop();}};
 document.addEventListener('click',e=>{const p=$('#themePop'),b=$('#themeBtn');if(p.classList.contains('open')&&!p.contains(e.target)&&!b.contains(e.target))closeThemePop();});

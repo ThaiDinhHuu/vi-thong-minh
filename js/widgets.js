@@ -158,7 +158,7 @@ export function applyTheme(key){
     if(tc)tc.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--bg-0').trim()||'#0b1020');
     buildThemeGrid();
   };
-  circleReveal(document.getElementById('themeBtn'),doChange,{expand:true,duration:1100});
+  circleReveal(document.getElementById('themeBtn'),doChange,{expand:true,duration:1450});
 }
 export function buildThemeGrid(){
   const grid=$('#themeGrid');if(!grid)return;const cur=currentTheme();grid.innerHTML='';
