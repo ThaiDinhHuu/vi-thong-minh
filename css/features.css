@@ -114,6 +114,7 @@
   .auth-submit:hover{transform:translateY(-2px)}.auth-submit:disabled{opacity:.6;cursor:wait}
   .auth-toggle{margin-top:16px;font-size:13.5px;color:var(--txt-dim)}
   .auth-toggle a{color:var(--accent-2);cursor:pointer;font-weight:700;text-decoration:none}
+  .auth-lang{margin-top:22px;padding-top:18px;border-top:1px solid var(--glass-brd);display:flex;justify-content:center}
   .auth-err{color:var(--red);font-size:13px;margin-top:12px;min-height:18px;font-weight:600}
   .setup{max-width:560px;padding:34px;text-align:left;line-height:1.6}
   .setup h2{font-size:22px;margin-bottom:10px}
