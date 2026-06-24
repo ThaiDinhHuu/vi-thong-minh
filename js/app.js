@@ -10,7 +10,7 @@ import { firebaseConfig, initializeApp, getAuth, onAuthStateChanged, GoogleAuthP
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   collection, doc, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc, serverTimestamp } from './firebase.js';
 
-let chart, db, auth, currentUser=null;
+let chart, barChart, db, auth, currentUser=null;
 let unsubs=[];
 let recurringBusy=false, walletsLoaded=false, recurringLoaded=false;
 
@@ -347,6 +347,42 @@ function renderChart(){
   const cfg={type:'doughnut',data:{labels,datasets:[{data,backgroundColor:COLORS,borderWidth:0,hoverOffset:10,borderRadius:6,spacing:2}]},
     options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`},backgroundColor:'rgba(20,26,53,.95)',padding:12,cornerRadius:10,titleColor:'#fff',bodyColor:'#cfd6f5'}},animation:{animateScale:true,animateRotate:true,duration:700}}};
   if(chart){chart.data=cfg.data;chart.update('none');}else chart=new Chart($('#chart'),cfg);
+}
+
+/* ===== Render: reports (thu/chi theo tháng + chỉ số nhanh) ===== */
+function lastMonths(n){
+  const arr=[];const d=new Date();const y=d.getFullYear(),m=d.getMonth();
+  for(let i=n-1;i>=0;i--){const dt=new Date(y,m-i,1);arr.push(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`);}
+  return arr;
+}
+function renderReports(){
+  if(!$('#barChart'))return;
+  const months=lastMonths(6);
+  const inc=months.map(mk=>state.txs.filter(tr=>tr.type==='income'&&monthKey(tr.date)===mk).reduce((s,tr)=>s+tr.amount,0));
+  const exp=months.map(mk=>monthExpense(mk));
+  const labels=months.map(mk=>monthLabel(mk));
+  const cfg={type:'bar',data:{labels,datasets:[
+    {label:t('chip.income'),data:inc,backgroundColor:'#34e0a1',borderRadius:5,maxBarThickness:20},
+    {label:t('chip.expense'),data:exp,backgroundColor:'#ff6b8b',borderRadius:5,maxBarThickness:20}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#cfd6f5',boxWidth:12,font:{size:11}}},
+    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.raw)}`},backgroundColor:'rgba(20,26,53,.95)',padding:10,cornerRadius:10}},
+    scales:{x:{ticks:{color:'#9aa6d6',font:{size:10}},grid:{display:false}},
+      y:{ticks:{color:'#9aa6d6',font:{size:10},callback:v=>v>=1e6?(v/1e6)+'M':v>=1e3?Math.round(v/1e3)+'k':v},grid:{color:'rgba(255,255,255,.06)'}}}}};
+  if(barChart){barChart.data=cfg.data;barChart.update('none');}else barChart=new Chart($('#barChart'),cfg);
+  // chỉ số nhanh
+  const ym=thisMonth();const todayD=parseInt(todayISO().slice(8,10),10);
+  const daysInMonth=new Date(parseInt(ym.slice(0,4)),parseInt(ym.slice(5,7)),0).getDate();
+  const expThis=monthExpense(ym);
+  const incThis=state.txs.filter(tr=>tr.type==='income'&&monthKey(tr.date)===ym).reduce((s,tr)=>s+tr.amount,0);
+  const avgDay=todayD?expThis/todayD:0, projected=avgDay*daysInMonth;
+  const saveRate=incThis>0?Math.round((incThis-expThis)/incThis*100):null;
+  let maxI=0;exp.forEach((v,i)=>{if(v>exp[maxI])maxI=i;});
+  const stat=(label,val)=>`<div class="rstat"><div class="rl">${label}</div><div class="rv">${val}</div></div>`;
+  $('#reportStats').innerHTML=
+    stat(t('report.avgDay'),fmt(avgDay))+
+    stat(t('report.projected'),fmt(projected))+
+    stat(t('report.saveRate'),saveRate==null?'—':saveRate+'%')+
+    stat(t('report.topMonth'),exp[maxI]>0?`${labels[maxI]} · ${fmt(exp[maxI])}`:'—');
 }
 
 /* ===== Render: wallets ===== */
@@ -983,7 +1019,7 @@ function notifyDueBills(){
   });
 }
 
-function renderAll(){renderStats();renderWallets();renderList();renderChart();renderBudgetBanner();renderBillBanner();syncCsels();}
+function renderAll(){renderStats();renderWallets();renderList();renderChart();renderReports();renderBudgetBanner();renderBillBanner();syncCsels();}
 
 /* ===== CSV export ===== */
 function exportCSV(){
@@ -1060,7 +1096,7 @@ function activateTab(name){
   if(name==='savings')renderSavings();
   if(name==='debts')renderDebts();
   if(name==='bills')renderBills();
-  if(name==='charts'){renderChart();if(chart)requestAnimationFrame(()=>chart.resize());}
+  if(name==='charts'){renderChart();renderReports();requestAnimationFrame(()=>{if(chart)chart.resize();if(barChart)barChart.resize();});}
 }
 $$('#tabs button').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
 activateTab(localStorage.getItem('vtm_tab')||'dash');
