@@ -1042,6 +1042,88 @@ function exportCSV(){
   URL.revokeObjectURL(url);toast(t('toast.exported',{n:txs.length}));
 }
 
+/* ===== Settings: backup / restore / import ===== */
+function downloadBackup(){
+  const data={app:'hu',version:1,exportedAt:todayISO(),data:{
+    wallets:state.wallets, transactions:state.txs,
+    categories:[...S.CATS.expense,...S.CATS.income],
+    recurring:state.recurring, goals:state.goals, debts:state.debts, bills:state.bills, budget:state.budget
+  }};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=`hu-backup_${todayISO()}.json`;a.click();URL.revokeObjectURL(url);
+  toast(t('settings.backupDone'));
+}
+async function restoreBackup(obj){
+  if(!currentUser||!obj||!obj.data)return;
+  const uid=currentUser.uid, d=obj.data;
+  const writeColl=async(coll,arr,idField)=>{
+    for(const item of (arr||[])){
+      const id=item[idField]||item.id;if(!id)continue;
+      const data={...item};delete data.id;delete data.docId;
+      try{await setDoc(doc(db,'users',uid,coll,id),data);}catch(e){console.error(e);}
+    }
+  };
+  await writeColl('wallets',d.wallets,'id');
+  await writeColl('transactions',d.transactions,'id');
+  await writeColl('categories',d.categories,'docId');
+  await writeColl('recurring',d.recurring,'id');
+  await writeColl('goals',d.goals,'id');
+  await writeColl('debts',d.debts,'id');
+  await writeColl('bills',d.bills,'id');
+  if(d.budget){try{await setDoc(doc(db,'users',uid,'settings','budget'),d.budget,{merge:true});}catch(e){console.error(e);}}
+  toast(t('settings.restoreDone'));
+}
+function handleRestoreFile(file){
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{
+      const obj=JSON.parse(r.result);
+      const cnt=((obj.data&&obj.data.transactions)||[]).length;
+      const ok=await confirmDialog(t('settings.restoreConfirm',{n:cnt}),{title:t('settings.restoreTitle'),ok:t('settings.restoreOk'),danger:false});
+      if(ok)restoreBackup(obj);
+    }catch(e){console.error(e);toast(t('settings.fileError'),'danger');}
+  };
+  r.readAsText(file);
+}
+function parseCSV(text){
+  const rows=[];let i=0,field='',row=[],inQ=false;
+  text=String(text).replace(/^﻿/,'');
+  while(i<text.length){const c=text[i];
+    if(inQ){if(c==='"'){if(text[i+1]==='"'){field+='"';i++;}else inQ=false;}else field+=c;}
+    else{if(c==='"')inQ=true;else if(c===','){row.push(field);field='';}else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}else if(c!=='\r')field+=c;}
+    i++;
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+async function importCsv(text){
+  if(!currentUser)return;
+  const rows=parseCSV(text).filter(r=>r.length>=6);
+  if(rows.length<2){toast(t('settings.csvEmpty'),'warn');return;}
+  const body=rows.slice(1);
+  const catByName={};[...S.CATS.expense,...S.CATS.income].forEach(c=>{[catName(c),c.vi,c.en].forEach(nm=>{if(nm)catByName[nm.toLowerCase()]=c.id;});});
+  const walByName={};state.wallets.forEach(w=>{walByName[w.name.toLowerCase()]=w.id;walByName[(w.icon+' '+w.name).toLowerCase()]=w.id;});
+  const incomeLabels=['thu','income',t('chip.income').toLowerCase()];
+  let added=0;
+  for(const r of body){
+    const date=(r[0]||'').trim(), typeL=(r[1]||'').trim().toLowerCase(), catL=(r[2]||'').trim(), desc=(r[3]||'').trim(), walletL=(r[4]||'').trim(), amtL=(r[5]||'').trim();
+    if(typeL.includes('chuyển')||typeL.includes('transfer'))continue;
+    const type=incomeLabels.includes(typeL)?'income':'expense';
+    const amount=Math.abs(num(amtL));
+    if(!amount||!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+    const cat=catByName[catL.toLowerCase()]||(type==='expense'?'other':'salary');
+    const walletId=walByName[walletL.toLowerCase()]||'';
+    try{await addDoc(col(currentUser.uid,'transactions'),{type,cat,desc,amount,date,walletId,createdAt:serverTimestamp()});added++;}catch(e){console.error(e);}
+  }
+  toast(t('settings.csvDone',{n:added}));
+}
+function handleCsvFile(file){
+  const r=new FileReader();
+  r.onload=async()=>{const ok=await confirmDialog(t('settings.csvConfirm'),{title:t('settings.csvTitle'),ok:t('settings.csvOk'),danger:false});if(ok)importCsv(r.result);};
+  r.readAsText(file);
+}
+
 /* ===================== UI WIRING ===================== */
 $('#dateInput').dataset.iso=todayISO();$('#trDate').dataset.iso=todayISO();
 function placeWalletPop(){
@@ -1271,6 +1353,13 @@ $('#catCancel').onclick=()=>$('#catModal').classList.remove('show');
 $('#catSave').onclick=saveCat;
 $('#catNameInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveCat();});
 $('#catModal').addEventListener('click',e=>{if(e.target===$('#catModal'))$('#catModal').classList.remove('show');});
+
+// Settings (data tools)
+$('#backupBtn').onclick=downloadBackup;
+$('#restoreBtn').onclick=()=>$('#restoreFile').click();
+$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(f)handleRestoreFile(f);e.target.value='';};
+$('#importCsvBtn').onclick=()=>$('#csvFile').click();
+$('#csvFile').onchange=e=>{const f=e.target.files[0];if(f)handleCsvFile(f);e.target.value='';};
 
 // Logout
 $('#logoutBtn').onclick=()=>{if(auth)signOut(auth);};

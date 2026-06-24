@@ -66,6 +66,7 @@
         <button data-tab="savings"><span class="tab-ic">🐷</span><span class="tab-label" data-i18n="tab.savings">Tích lũy</span></button>
         <button data-tab="debts"><span class="tab-ic">🤝</span><span class="tab-label" data-i18n="tab.debts">Nợ</span></button>
         <button data-tab="cats"><span class="tab-ic">📂</span><span class="tab-label" data-i18n="tab.cats">Danh mục</span></button>
+        <button data-tab="settings"><span class="tab-ic">⚙️</span><span class="tab-label" data-i18n="tab.settings">Cài đặt</span></button>
       </nav>
       <button class="side-collapse" id="sidebarToggle" title="Thu gọn / Mở rộng"><span class="sc-ic">❮</span><span class="sc-label" data-i18n="nav.collapse">Thu gọn</span></button>
     </aside>
@@ -302,6 +303,25 @@
           <span class="right"><button class="btn-ghost" id="addIncomeCatBtn" style="padding:8px 14px;font-size:13px" data-i18n="cats.add">➕ Thêm danh mục</button></span>
         </h2>
         <div id="incomeCatList" class="cat-manage"></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: SETTINGS (data tools) ===== -->
+    <div class="tab-page" id="page-settings">
+      <div class="panel glass" style="margin-bottom:18px">
+        <div class="section-title">💾 <span data-i18n="settings.backupTitle">Sao lưu & khôi phục</span></div>
+        <p class="hint" data-i18n="settings.backupHint">Tải toàn bộ dữ liệu về một file để lưu trữ; khôi phục lại khi cần.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn-ghost" id="backupBtn" data-i18n="settings.backup">⬇ Tải bản sao lưu</button>
+          <button class="btn-ghost" id="restoreBtn" data-i18n="settings.restore">⬆ Khôi phục từ file</button>
+        </div>
+        <input type="file" id="restoreFile" accept="application/json,.json" style="display:none" />
+      </div>
+      <div class="panel glass">
+        <div class="section-title">📥 <span data-i18n="settings.importTitle">Nhập giao dịch từ CSV</span></div>
+        <p class="hint" data-i18n="settings.importHint">Nhập các dòng Thu/Chi từ file CSV (đúng định dạng khi Xuất CSV). Dòng chuyển ví sẽ được bỏ qua.</p>
+        <div style="margin-top:14px"><button class="btn-ghost" id="importCsvBtn" data-i18n="settings.importCsv">⬆ Chọn file CSV…</button></div>
+        <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none" />
       </div>
     </div>
       </div>
