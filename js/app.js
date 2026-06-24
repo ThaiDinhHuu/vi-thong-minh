@@ -31,6 +31,7 @@ function applyLang(){
   renderFormCats();renderRecCats();renderEtCats();
   updateCollapseAllLabel();
   renderAll();renderRecurring();renderBudget();renderCategoryManage();renderSavings();renderDebts();renderBills();
+  updateNotifyBtn();
   syncCsels();
 }
 function setLang(l){S.lang=l;localStorage.setItem('vtm_lang',l);applyLang();}
@@ -891,7 +892,7 @@ function renderBills(){
 }
 function renderBillBanner(){
   const banner=$('#billBanner');if(!banner)return;
-  updateBillBadge();
+  updateBillBadge();notifyDueBills();
   const due=state.bills.filter(b=>b.active!==false).map(b=>({b,st:billStatus(b)})).filter(o=>!o.st.paid&&o.st.diff<=7).sort((a,b)=>a.st.diff-b.st.diff);
   if(!due.length){banner.style.display='none';return;}
   banner.style.display='block';
@@ -951,6 +952,35 @@ async function deleteBill(b){
   if(!ok)return;
   try{await deleteDoc(doc(db,'users',currentUser.uid,'bills',b.id));toast(t('toast.billDeleted'));}
   catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+
+/* ----- Bill device notifications (PWA) ----- */
+function notifSupported(){return ('Notification' in window);}
+function updateNotifyBtn(){
+  const btn=$('#billNotifyBtn');if(!btn)return;
+  if(!notifSupported()){btn.textContent=t('bills.notifyUnsupported');btn.disabled=true;return;}
+  const p=Notification.permission;
+  btn.disabled=(p==='granted');
+  btn.textContent=p==='granted'?t('bills.notifyOn'):p==='denied'?t('bills.notifyBlocked'):t('bills.notify');
+}
+function showNotif(title,body,tag){
+  const opts={body,tag,icon:'favicon.svg',badge:'favicon.svg',lang:S.lang};
+  if(navigator.serviceWorker&&navigator.serviceWorker.ready){
+    navigator.serviceWorker.ready.then(reg=>reg.showNotification(title,opts)).catch(()=>{try{new Notification(title,opts);}catch(e){}});
+  }else{try{new Notification(title,opts);}catch(e){}}
+}
+function notifyDueBills(){
+  if(!notifSupported()||Notification.permission!=='granted')return;
+  const ym=thisMonth();
+  state.bills.filter(b=>b.active!==false).forEach(b=>{
+    const st=billStatus(b);
+    if(st.paid||st.diff>1)return; // chỉ nhắc khi còn ≤1 ngày, đến hạn, hoặc quá hạn
+    const key='vtm_notified_'+b.id+'_'+ym;
+    if(localStorage.getItem(key))return;
+    const ci=catInfo('expense',b.cat),sx=billStatusText(st);
+    showNotif(t('bills.notifyTitle'),`${ci.emo} ${b.name} · ${fmt(b.amount)} · ${sx.txt}`,b.id);
+    localStorage.setItem(key,'1');
+  });
 }
 
 function renderAll(){renderStats();renderWallets();renderList();renderChart();renderBudgetBanner();renderBillBanner();syncCsels();}
@@ -1181,7 +1211,15 @@ $('#dmConfirm').onclick=doDebtMove;
 $('#dmAmt').addEventListener('keydown',e=>{if(e.key==='Enter')doDebtMove();});
 $('#debtMoveModal').addEventListener('click',e=>{if(e.target===$('#debtMoveModal'))$('#debtMoveModal').classList.remove('show');});
 
-// Bills (reminders)
+// Bills (reminders) + PWA / device notifications
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW',e));}
+updateNotifyBtn();
+$('#billNotifyBtn').onclick=()=>{
+  if(!('Notification' in window))return;
+  Notification.requestPermission().then(p=>{updateNotifyBtn();if(p==='granted')notifyDueBills();});
+};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)notifyDueBills();});
+setInterval(notifyDueBills,30*60*1000);
 attachThousands($('#billAmt'));
 $('#addBillBtn').onclick=openBillAdd;
 $('#billCancel').onclick=()=>$('#billModal').classList.remove('show');

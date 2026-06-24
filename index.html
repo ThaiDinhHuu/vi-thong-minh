@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" sizes="any" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AB%99%3C/text%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="favicon.svg" />
 <meta name="theme-color" content="#0b1020" />
+<link rel="manifest" href="manifest.json" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -232,7 +233,8 @@
         <h2><span class="dot"></span> <span data-i18n="bills.title">Hóa đơn cố định</span>
           <span class="right"><button class="btn-ghost" id="addBillBtn" style="padding:8px 14px;font-size:13px" data-i18n="bills.add">➕ Thêm hóa đơn</button></span>
         </h2>
-        <p class="hint" style="margin-bottom:14px" data-i18n-html="bills.hint">Nhắc bạn các hóa đơn sắp đến hạn.</p>
+        <p class="hint" style="margin-bottom:12px" data-i18n-html="bills.hint">Nhắc bạn các hóa đơn sắp đến hạn.</p>
+        <button class="mini-btn" id="billNotifyBtn" style="margin-bottom:16px">🔔 Bật nhắc trên thiết bị</button>
         <div id="billList"></div>
       </div>
     </div>
