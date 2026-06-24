@@ -360,7 +360,7 @@ function attachThousands(el){
 /* ===== Apply language ===== */
 function applyLang(){
   document.documentElement.lang=lang;
-  $('#langBtn').textContent=lang==='vi'?'🌐 EN':'🌐 VI';
+  paintLangSeg();
   const al=$('#authLangLink');if(al)al.textContent=t('auth.switchLang');
   $('#themeBtn').title=t('nav.themeTitle');
   $('#collapseAll').title=t('list.collapseTitle');
@@ -971,7 +971,8 @@ renderFormCats();renderRecCats();renderWalletIcons();renderCatFilterOptions();
 document.querySelectorAll('.field select').forEach(enhanceSelect);syncCsels();
 
 // Language
-$('#langBtn').onclick=()=>setLang(lang==='vi'?'en':'vi');
+function paintLangSeg(){$$('#langSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lang===lang));}
+$$('#langSeg button').forEach(b=>b.onclick=()=>{if(b.dataset.lang!==lang)setLang(b.dataset.lang);});
 $('#authLangLink').onclick=()=>setLang(lang==='vi'?'en':'vi');
 
 // Tabs
