@@ -85,6 +85,7 @@ const I18N={
     'cats.empty':'Chưa có danh mục nào.','cats.enterName':'⚠️ Nhập tên danh mục',
     'toast.catCreated':'📂 Đã thêm danh mục','toast.catUpdated':'💾 Đã cập nhật danh mục','toast.catSaveFail':'⚠️ Lưu thất bại','toast.catDeleted':'🗑️ Đã xoá danh mục',
     'confirm.deleteCatTitle':'🗑️ Xoá danh mục','confirm.deleteCatMsg':'Xoá danh mục "{name}"? Giao dịch cũ vẫn giữ nhưng sẽ hiện là "Khác".',
+    'confirm.deleteTxTitle':'🗑️ Xoá giao dịch','confirm.deleteTxMsg':'Xoá giao dịch "{name}"? Hành động không thể hoàn tác.',
     'err.generic':'Đã xảy ra lỗi',
     'err.auth/invalid-email':'Email không hợp lệ','err.auth/user-not-found':'Tài khoản không tồn tại','err.auth/wrong-password':'Sai mật khẩu',
     'err.auth/invalid-credential':'Email hoặc mật khẩu không đúng','err.auth/email-already-in-use':'Email đã được đăng ký','err.auth/weak-password':'Mật khẩu quá yếu (tối thiểu 6 ký tự)',
@@ -153,6 +154,7 @@ const I18N={
     'cats.empty':'No categories yet.','cats.enterName':'⚠️ Enter a category name',
     'toast.catCreated':'📂 Category added','toast.catUpdated':'💾 Category updated','toast.catSaveFail':'⚠️ Save failed','toast.catDeleted':'🗑️ Category deleted',
     'confirm.deleteCatTitle':'🗑️ Delete category','confirm.deleteCatMsg':'Delete category "{name}"? Past transactions are kept but will show as "Other".',
+    'confirm.deleteTxTitle':'🗑️ Delete transaction','confirm.deleteTxMsg':'Delete transaction "{name}"? This cannot be undone.',
     'err.generic':'Something went wrong',
     'err.auth/invalid-email':'Invalid email','err.auth/user-not-found':'Account not found','err.auth/wrong-password':'Wrong password',
     'err.auth/invalid-credential':'Email or password is incorrect','err.auth/email-already-in-use':'Email already registered','err.auth/weak-password':'Password too weak (min 6 characters)',
@@ -197,7 +199,7 @@ let state={
 };
 let chart, db, auth, currentUser=null;
 let unsubs=[];
-let recurringRan=false;
+let recurringBusy=false, walletsLoaded=false, recurringLoaded=false;
 
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
@@ -408,7 +410,7 @@ else{
       hide($('#authCard'));hide($('#loadingCard'));$('#overlay').classList.add('hide');show($('#appRoot'));
       paintUser(user);subscribeAll(user.uid);
     }else{
-      unsubs.forEach(u=>u&&u());unsubs=[];recurringRan=false;
+      unsubs.forEach(u=>u&&u());unsubs=[];recurringBusy=false;walletsLoaded=false;recurringLoaded=false;
       state.txs=[];state.wallets=[];state.recurring=[];state.budget={total:0,perCat:{}};
       renderAll();hide($('#appRoot'));hide($('#loadingCard'));$('#overlay').classList.remove('hide');show($('#authCard'));
     }
@@ -440,6 +442,7 @@ function subscribeAll(uid){
   unsubs.push(onSnapshot(col(uid,'wallets'),snap=>{
     state.wallets=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
     if(!snap.size && !localStorage.getItem('seeded_wallets_'+uid)){seedWallets(uid);}
+    walletsLoaded=true;
     renderAll();maybeRunRecurring();
   },err=>toast(t('toast.errWallet',{code:err.code}),'danger')));
 
@@ -454,6 +457,7 @@ function subscribeAll(uid){
 
   unsubs.push(onSnapshot(col(uid,'recurring'),snap=>{
     state.recurring=snap.docs.map(d=>({id:d.id,...d.data()}));
+    recurringLoaded=true;
     renderRecurring();maybeRunRecurring();
   }));
 
@@ -493,23 +497,26 @@ function refreshCatUI(){
 
 /* ===== Recurring auto-run ===== */
 async function maybeRunRecurring(){
-  if(recurringRan||!currentUser||!state.wallets.length)return;
-  recurringRan=true;
-  const ym=thisMonth(); const today=parseInt(todayISO().slice(8,10),10);
-  for(const r of state.recurring){
-    if(!r.active)continue;
-    if((r.lastMonth||'')>=ym)continue;
-    if((r.day||1)>today)continue;
-    const dd=String(Math.min(r.day||1,28)).padStart(2,'0');
-    try{
-      await addDoc(col(currentUser.uid,'transactions'),{
-        type:r.type,cat:r.cat,desc:(r.desc||'')+t('rec.suffix'),amount:r.amount,
-        date:`${ym}-${dd}`,walletId:r.walletId||'',createdAt:serverTimestamp()
-      });
-      await updateDoc(doc(db,'users',currentUser.uid,'recurring',r.id),{lastMonth:ym});
-      toast(t('toast.autoLogged',{desc:escapeHtml(r.desc)}));
-    }catch(e){console.error(e);}
-  }
+  // Chỉ chạy khi CẢ ví và định kỳ đã tải xong (tránh bật cờ sai khi dữ liệu chưa về đủ).
+  if(recurringBusy||!currentUser||!walletsLoaded||!recurringLoaded||!state.wallets.length)return;
+  recurringBusy=true; // chống chạy chồng; việc chống ghi trùng do trường lastMonth đảm nhiệm
+  try{
+    const ym=thisMonth(); const today=parseInt(todayISO().slice(8,10),10);
+    for(const r of state.recurring){
+      if(!r.active)continue;
+      if((r.lastMonth||'')>=ym)continue;
+      if((r.day||1)>today)continue;
+      const dd=String(Math.min(r.day||1,28)).padStart(2,'0');
+      try{
+        await addDoc(col(currentUser.uid,'transactions'),{
+          type:r.type,cat:r.cat,desc:(r.desc||'')+t('rec.suffix'),amount:r.amount,
+          date:`${ym}-${dd}`,walletId:r.walletId||'',createdAt:serverTimestamp()
+        });
+        await updateDoc(doc(db,'users',currentUser.uid,'recurring',r.id),{lastMonth:ym});
+        toast(t('toast.autoLogged',{desc:escapeHtml(r.desc)}));
+      }catch(e){console.error(e);}
+    }
+  }finally{recurringBusy=false;}
 }
 
 /* ===== Compute ===== */
@@ -554,9 +561,12 @@ function addTx(){
     .then(()=>{if(type==='expense')checkBudgetWarning(date);})
     .catch(e=>{console.error(e);toast(t('toast.saveFail',{code:e.code}),'danger');});
 }
-async function removeTx(id){
+async function removeTx(tr){
   if(!currentUser)return;
-  try{await deleteDoc(doc(db,'users',currentUser.uid,'transactions',id));toast(t('toast.deletedTx'));}
+  const label=tr.type==='transfer'?t('tx.transfer'):(tr.desc||catInfo(tr.type,tr.cat).name);
+  const ok=await confirmDialog(t('confirm.deleteTxMsg',{name:label}),{title:t('confirm.deleteTxTitle')});
+  if(!ok)return;
+  try{await deleteDoc(doc(db,'users',currentUser.uid,'transactions',tr.id));toast(t('toast.deletedTx'));}
   catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
 }
 
@@ -679,7 +689,7 @@ function renderList(){
           <div class="amt ${amtCls}">${amtTxt}</div>
           <div class="act"><button class="edit" title="${t('tt.edit')}">✎</button><button class="del" title="${t('tt.delete')}">✕</button></div>`;
         el.querySelector('.edit').onclick=()=>openTxEdit(tr);
-        el.querySelector('.del').onclick=()=>removeTx(tr.id);
+        el.querySelector('.del').onclick=()=>removeTx(tr);
         inner.appendChild(el);
       });
       mInner.appendChild(dayWrap);
