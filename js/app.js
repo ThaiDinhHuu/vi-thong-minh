@@ -275,7 +275,7 @@ function renderStats(){
           <div class="wb-ic" style="background:${c}22;color:${c}">${emo}</div>
           <div class="wb-info"><div class="wb-name">${escapeHtml(name)}</div>
             <div class="wb-bar"><i style="width:${Math.round(Math.abs(amt)/maxAbs*100)}%;background:${c}"></i></div></div>
-          <div class="wb-amt" style="color:${amt>=0?'#fff':'var(--red)'}">${fmt(amt)}</div>
+          <div class="wb-amt" style="color:${amt>=0?'var(--txt)':'var(--red)'}">${fmt(amt)}</div>
         </div>`;
       let html=state.wallets.map(w=>row(w.icon,w.name,walletBalance(w),WALLET_COLORS[w.icon]||'#7c5cff')).join('');
       html+=state.goals.map(g=>row(g.emo,g.name,goalSaved(g.id),'#7c5cff')).join('');
@@ -409,10 +409,10 @@ function renderReports(){
   const cfg={type:'bar',data:{labels,datasets:[
     {label:t('chip.income'),data:inc,backgroundColor:'#34e0a1',borderRadius:5,maxBarThickness:20},
     {label:t('chip.expense'),data:exp,backgroundColor:'#ff6b8b',borderRadius:5,maxBarThickness:20}
-  ]},options:{maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#cfd6f5',boxWidth:12,font:{size:11}}},
-    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.raw)}`},backgroundColor:'rgba(20,26,53,.95)',padding:10,cornerRadius:10}},
-    scales:{x:{ticks:{color:'#9aa6d6',font:{size:10}},grid:{display:false}},
-      y:{ticks:{color:'#9aa6d6',font:{size:10},callback:v=>v>=1e6?(v/1e6)+'M':v>=1e3?Math.round(v/1e3)+'k':v},grid:{color:'rgba(255,255,255,.06)'}}}}};
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#5f6982',boxWidth:12,font:{size:11}}},
+    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.raw)}`},backgroundColor:'rgba(26,34,54,.95)',padding:10,cornerRadius:10}},
+    scales:{x:{ticks:{color:'#5f6982',font:{size:10}},grid:{display:false}},
+      y:{ticks:{color:'#5f6982',font:{size:10},callback:v=>v>=1e6?(v/1e6)+'M':v>=1e3?Math.round(v/1e3)+'k':v},grid:{color:'rgba(20,28,54,.08)'}}}}};
   if(barChart){barChart.data=cfg.data;barChart.update('none');}else barChart=new Chart($('#barChart'),cfg);
   // chỉ số nhanh
   const ym=thisMonth();const todayD=parseInt(todayISO().slice(8,10),10);
@@ -490,7 +490,7 @@ function renderWallets(){
       <button class="wdel" title="${t('tt.deleteWallet')}">✕</button>
       <div class="wic" style="background:${c}22;color:${c}">${w.icon}</div>
       <div class="wn">${escapeHtml(w.name)}</div>
-      <div class="wb" style="color:${bal>=0?'#fff':'var(--red)'}">${fmt(bal)}</div>`;
+      <div class="wb" style="color:${bal>=0?'var(--txt)':'var(--red)'}">${fmt(bal)}</div>`;
     el.querySelector('.wedit').onclick=()=>openWalletEdit(w);
     el.querySelector('.wdel').onclick=()=>removeWallet(w);
     grid.appendChild(el);
