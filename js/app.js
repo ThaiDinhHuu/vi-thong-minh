@@ -117,7 +117,7 @@ function subscribeAll(uid){
   },err=>console.error(err)));
 
   unsubs.push(onSnapshot(doc(db,'users',uid,'settings','budget'),snap=>{
-    const d=snap.data()||{};state.budget={total:d.total||0,perCat:d.perCat||{}};
+    const d=snap.data()||{};state.budget={total:d.total||0,perCat:d.perCat||{},period:d.period||'month'};
     renderBudget();renderBudgetBanner();
   }));
 }
@@ -198,9 +198,24 @@ async function removeTx(tr){
   catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
 }
 
+/* Chu kỳ ngân sách: tháng hoặc tuần (Thứ 2 - Chủ Nhật) */
+function periodRange(){
+  const now=new Date();
+  if((state.budget.period||'month')==='week'){
+    const day=(now.getDay()+6)%7; // Thứ 2 = 0
+    const mon=new Date(now);mon.setDate(now.getDate()-day);
+    const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+    return [isoOf(mon),isoOf(sun)];
+  }
+  const y=now.getFullYear(),m=now.getMonth();
+  return [isoOf(new Date(y,m,1)),isoOf(new Date(y,m+1,0))];
+}
+function periodExpense(){const [a,b]=periodRange();return state.txs.filter(tr=>tr.type==='expense'&&(tr.date||'')>=a&&(tr.date||'')<=b).reduce((s,tr)=>s+tr.amount,0);}
+function periodExpenseByCat(catId){const [a,b]=periodRange();return state.txs.filter(tr=>tr.type==='expense'&&tr.cat===catId&&(tr.date||'')>=a&&(tr.date||'')<=b).reduce((s,tr)=>s+tr.amount,0);}
+function inCurrentPeriod(date){const [a,b]=periodRange();return date>=a&&date<=b;}
 function checkBudgetWarning(date){
-  if(!state.budget.total||monthKey(date)!==thisMonth())return;
-  const spent=monthExpense(thisMonth());const limit=state.budget.total;
+  if(!state.budget.total||!inCurrentPeriod(date))return;
+  const spent=periodExpense();const limit=state.budget.total;
   const pct=spent/limit*100;
   if(spent>limit)toast(t('toast.budgetOver',{spent:fmt(spent),limit:fmt(limit)}),'danger');
   else if(pct>=80)toast(t('toast.budgetNear',{pct:Math.round(pct)}),'warn');
@@ -247,7 +262,8 @@ function renderBudgetBanner(){
   const b=$('#budgetBanner');
   if(!state.budget.total){b.style.display='none';return;}
   b.style.display='block';
-  const spent=monthExpense(thisMonth());const limit=state.budget.total;
+  $('#budgetBannerTitle').textContent=(state.budget.period==='week')?t('dash.budgetWeek'):t('dash.budgetMonth');
+  const spent=periodExpense();const limit=state.budget.total;
   const pct=Math.min(spent/limit*100,100);const realPct=Math.round(spent/limit*100);
   $('#bgSpent').textContent=fmt(spent);$('#bgLimit').textContent=fmt(limit);
   $('#budgetPct').textContent=realPct+'%';
@@ -543,10 +559,13 @@ async function removeRecurring(r){const ok=await confirmDialog(t('confirm.delete
 
 /* ===== Budget tab ===== */
 function renderBudget(){
+  const p=state.budget.period||'month';
+  const pseg=$('#budgetPeriodSeg');
+  if(pseg){pseg.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x.dataset.period===p));pseg.classList.toggle('p2',p==='week');}
   if(document.activeElement!==$('#budgetTotal'))$('#budgetTotal').value=state.budget.total?Number(state.budget.total).toLocaleString('en-US'):'';
   const wrap=$('#catBudgetList');if(!wrap)return;wrap.innerHTML='';
   S.CATS.expense.forEach(c=>{
-    const lim=state.budget.perCat[c.id]||0;const spent=monthExpenseByCat(thisMonth(),c.id);
+    const lim=state.budget.perCat[c.id]||0;const spent=periodExpenseByCat(c.id);
     const pct=lim?Math.min(spent/lim*100,100):0;const realPct=lim?Math.round(spent/lim*100):0;
     const cls=realPct>=100?'over':realPct>=80?'warn':'';
     const note=lim?t('budget.spentOfLimit',{spent:fmt(spent),limit:fmt(lim)}):t('budget.spentOf',{spent:fmt(spent)});
@@ -1303,6 +1322,13 @@ $('#addRecBtn').onclick=addRecurring;
 
 // Budget
 $('#saveBudgetBtn').onclick=saveBudgetTotal;
+$('#budgetPeriodSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  const p=b.dataset.period;
+  $('#budgetPeriodSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));
+  $('#budgetPeriodSeg').classList.toggle('p2',p==='week');
+  state.budget.period=p;renderBudget();renderBudgetBanner();
+  if(currentUser){setDoc(doc(db,'users',currentUser.uid,'settings','budget'),{period:p},{merge:true}).catch(e=>console.error(e));}
+});
 
 // Savings goals
 attachThousands($('#goalTarget'));attachThousands($('#gmAmt'));datePicker.attach($('#gmDate'));

@@ -134,6 +134,9 @@
   @media(max-width:900px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr}}
   @media(max-width:560px){.cats{grid-template-columns:repeat(3,1fr)}.filter-row{grid-template-columns:1fr}}
 
+  .seg.budget-period .slider{background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+  .seg.budget-period.p2 .slider{transform:translateX(100%)}
+
   /* ---- Reports ---- */
   .report-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
   .rstat{background:rgba(255,255,255,.04);border:1px solid var(--glass-brd);border-radius:13px;padding:12px 14px}

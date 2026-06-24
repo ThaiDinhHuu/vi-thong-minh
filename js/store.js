@@ -44,5 +44,5 @@ export const state = {
   recType:'expense', recCat:'food', recIcon:'💵',
   wIcon:'💵',
   filter:{q:'',type:'all',cat:'all',wallet:'all',from:'',to:''},
-  txs:[], wallets:[], recurring:[], goals:[], debts:[], bills:[], budget:{total:0,perCat:{}},
+  txs:[], wallets:[], recurring:[], goals:[], debts:[], bills:[], budget:{total:0,perCat:{},period:'month'},
 };
