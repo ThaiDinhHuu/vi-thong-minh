@@ -867,7 +867,7 @@ function exportCSV(){
   const csv=[head,...rows].map(r=>r.map(esc).join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
-  a.href=url;a.download=`ledgerly_${todayISO()}.csv`;a.click();
+  a.href=url;a.download=`hu_${todayISO()}.csv`;a.click();
   URL.revokeObjectURL(url);toast(t('toast.exported',{n:txs.length}));
 }
 
