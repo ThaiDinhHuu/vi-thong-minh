@@ -114,7 +114,7 @@
   .auth-forgot{text-align:right;margin:-4px 0 12px}
   .auth-forgot a{color:var(--accent-2);cursor:pointer;font-size:12.5px;font-weight:600;text-decoration:none}
   .auth-forgot a:hover{text-decoration:underline}
-  .auth-submit{width:100%;border:0;border-radius:100px;padding:14px;font-family:inherit;font-weight:700;font-size:15px;color:#fff;cursor:pointer;background:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.30),0 1px 3px 1px rgba(0,0,0,.15);transition:box-shadow .2s,filter .2s}
+  .auth-submit{width:100%;border:0;border-radius:100px;padding:14px;font-family:inherit;font-weight:700;font-size:15px;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 1px 2px rgba(0,0,0,.30),0 1px 3px 1px rgba(0,0,0,.15);transition:box-shadow .2s,filter .2s}
   .auth-submit:hover{box-shadow:0 1px 2px rgba(0,0,0,.30),0 4px 8px 3px rgba(0,0,0,.15);filter:brightness(1.06)}.auth-submit:disabled{opacity:.6;cursor:wait}
   .auth-toggle{margin-top:16px;font-size:13.5px;color:var(--txt-dim)}
   .auth-toggle a{color:var(--accent-2);cursor:pointer;font-weight:700;text-decoration:none}

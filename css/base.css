@@ -42,7 +42,10 @@
   body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.025;mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
   :focus-visible{outline:2px solid color-mix(in srgb,var(--accent-2) 70%,transparent);outline-offset:2px}
-  .bg{position:fixed;inset:0;z-index:-2;overflow:hidden;transition:background .5s ease;background:var(--bg-0)}
+  .bg{position:fixed;inset:0;z-index:-2;overflow:hidden;transition:background .5s ease;background:
+      radial-gradient(1100px 680px at 88% -12%,color-mix(in srgb,var(--accent) 15%,transparent),transparent 60%),
+      radial-gradient(920px 600px at -8% 108%,color-mix(in srgb,var(--accent-2) 13%,transparent),transparent 58%),
+      var(--bg-0)}
   .blob{display:none}
   .blob{position:absolute;border-radius:50%;filter:blur(48px);opacity:.5;mix-blend-mode:screen;will-change:transform;transform:translateZ(0);animation:float 22s ease-in-out infinite;transition:background .5s ease}
   .blob.a{width:420px;height:420px;background:var(--accent);top:-120px;left:-80px}
@@ -128,7 +131,7 @@
   .stat .sub{font-size:12px;color:var(--txt-dim);margin-top:6px}
   .stat .glow{position:absolute;width:140px;height:140px;border-radius:50%;filter:blur(40px);opacity:.4;right:-30px;top:-30px}
   .balance .glow{background:var(--accent)}.income .glow{background:var(--green)}.expense .glow{background:var(--red)}
-  .stats .balance{padding:26px 28px;background:var(--primary-container)}
+  .stats .balance{padding:26px 28px;background:linear-gradient(135deg,var(--primary-container),color-mix(in srgb,var(--accent-2) 16%,var(--card)))}
   .stats .balance .val{font-size:42px;letter-spacing:-1.5px;margin-top:2px}
   .stats .balance .glow{width:220px;height:220px;opacity:.45;right:-40px;top:-60px}
   .stats .balance .label{font-size:13.5px}
@@ -216,7 +219,7 @@
   .cat:hover .emo{transform:scale(1.2)}
   .cat.sel{background:var(--primary-container);border-color:var(--accent);color:var(--accent-ink)}
 
-  .btn-grad{width:100%;border:0;border-radius:100px;padding:14px;font-family:inherit;font-weight:700;font-size:15px;letter-spacing:.1px;color:#fff;cursor:pointer;background:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.30),0 1px 3px 1px rgba(0,0,0,.15);transition:box-shadow .2s,filter .2s;position:relative;overflow:hidden}
+  .btn-grad{width:100%;border:0;border-radius:100px;padding:14px;font-family:inherit;font-weight:700;font-size:15px;letter-spacing:.1px;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 1px 2px rgba(0,0,0,.30),0 1px 3px 1px rgba(0,0,0,.15);transition:box-shadow .2s,filter .2s;position:relative;overflow:hidden}
   .btn-grad:hover{box-shadow:0 1px 2px rgba(0,0,0,.30),0 4px 8px 3px rgba(0,0,0,.15);filter:brightness(1.06)}
   .btn-grad:active{filter:brightness(.96)}
   .btn-grad:disabled{opacity:.6;cursor:not-allowed}
