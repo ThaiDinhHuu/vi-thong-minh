@@ -49,30 +49,33 @@
   </div>
 
   <!-- ===== APP ===== -->
-  <div class="wrap app-hidden" id="appRoot">
-    <header>
-      <div class="brand"><div class="logo">💎</div><div><h1>Ví Thông Minh</h1><p data-i18n="brand.tagline">Quản lý chi tiêu cá nhân</p></div></div>
-      <div class="userbox">
-        <div class="av" id="userAv">U</div>
-        <div class="nm" id="userName">—<small id="userEmail"></small></div>
-        <div class="lang-seg" id="langSeg" title="Ngôn ngữ / Language">
-          <button data-lang="vi">VI</button>
-          <button data-lang="en">EN</button>
+  <div class="app-shell app-hidden" id="appRoot">
+    <aside class="sidebar">
+      <div class="side-brand"><div class="logo">💎</div><div><h1>Ví Thông Minh</h1><p data-i18n="brand.tagline">Quản lý chi tiêu cá nhân</p></div></div>
+      <nav class="tabs" id="tabs">
+        <button class="on" data-tab="dash" data-i18n="tab.dash">📊 Tổng quan</button>
+        <button data-tab="wallets" data-i18n="tab.wallets">💳 Ví</button>
+        <button data-tab="recurring" data-i18n="tab.recurring">🔁 Định kỳ</button>
+        <button data-tab="budget" data-i18n="tab.budget">🎯 Ngân sách</button>
+        <button data-tab="savings" data-i18n="tab.savings">🐷 Tích lũy</button>
+        <button data-tab="debts" data-i18n="tab.debts">🤝 Nợ</button>
+        <button data-tab="cats" data-i18n="tab.cats">📂 Danh mục</button>
+      </nav>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <div class="userbox">
+          <div class="lang-seg" id="langSeg" title="Ngôn ngữ / Language">
+            <button data-lang="vi">VI</button>
+            <button data-lang="en">EN</button>
+          </div>
+          <div class="av" id="userAv">U</div>
+          <div class="nm" id="userName">—<small id="userEmail"></small></div>
+          <button class="icon-btn theme-btn" id="themeBtn" title="Đổi giao diện" data-i18n="nav.theme">🎨 Giao diện</button>
+          <button class="icon-btn danger" id="logoutBtn" data-i18n="nav.logout">↩ Đăng xuất</button>
         </div>
-        <button class="icon-btn theme-btn" id="themeBtn" title="Đổi giao diện" data-i18n="nav.theme">🎨 Giao diện</button>
-        <button class="icon-btn danger" id="logoutBtn" data-i18n="nav.logout">↩ Đăng xuất</button>
-      </div>
-    </header>
-
-    <div class="tabs" id="tabs">
-      <button class="on" data-tab="dash" data-i18n="tab.dash">📊 Tổng quan</button>
-      <button data-tab="wallets" data-i18n="tab.wallets">💳 Ví</button>
-      <button data-tab="recurring" data-i18n="tab.recurring">🔁 Định kỳ</button>
-      <button data-tab="budget" data-i18n="tab.budget">🎯 Ngân sách</button>
-      <button data-tab="savings" data-i18n="tab.savings">🐷 Tích lũy</button>
-      <button data-tab="debts" data-i18n="tab.debts">🤝 Nợ</button>
-      <button data-tab="cats" data-i18n="tab.cats">📂 Danh mục</button>
-    </div>
+      </header>
+      <div class="content">
 
     <!-- ===== TAB: DASHBOARD ===== -->
     <div class="tab-page on" id="page-dash">
@@ -267,6 +270,8 @@
           <span class="right"><button class="btn-ghost" id="addIncomeCatBtn" style="padding:8px 14px;font-size:13px" data-i18n="cats.add">➕ Thêm danh mục</button></span>
         </h2>
         <div id="incomeCatList" class="cat-manage"></div>
+      </div>
+    </div>
       </div>
     </div>
   </div>
