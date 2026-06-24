@@ -35,13 +35,10 @@
     --field:#2B2930; --field-2:#36343C; --track:#48464E;
     --row:#26242B; --hover:color-mix(in srgb,var(--accent) 18%,transparent);
   }
-  /* ---- Đổi Sáng/Tối: quét PHẢI→TRÁI với mép lượn sóng ---- */
-  @keyframes mode-wave{
-    from{clip-path:polygon(100% 0%,106% 12.5%,100% 25%,106% 37.5%,100% 50%,106% 62.5%,100% 75%,106% 87.5%,100% 100%,100% 100%,100% 0%)}
-    to{clip-path:polygon(0% 0%,-6% 12.5%,0% 25%,-6% 37.5%,0% 50%,-6% 62.5%,0% 75%,-6% 87.5%,0% 100%,100% 100%,100% 0%)}
-  }
-  html.mode-anim::view-transition-old(root){animation:none}
-  html.mode-anim::view-transition-new(root){animation:mode-wave .9s cubic-bezier(.45,.05,.35,1) both}
+  /* ---- Đổi Sáng/Tối: lan toả hình tròn mềm từ nút bấm (JS lái bán kính) ---- */
+  html.mode-anim::view-transition-old(root),
+  html.mode-anim::view-transition-new(root){animation:none;mix-blend-mode:normal}
+  html.mode-anim::view-transition-new(root){z-index:1}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--txt);background:var(--bg-0);overflow-x:hidden;min-height:100vh;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:-.1px}
