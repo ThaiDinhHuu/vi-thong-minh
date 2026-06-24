@@ -314,6 +314,31 @@
   .mini-bar .f{height:100%;border-radius:6px;background:var(--green);transition:width .6s}
   .mini-bar .f.warn{background:var(--amber)}.mini-bar .f.over{background:var(--red)}
 
+  /* ---- Savings goals ---- */
+  .goal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+  .goal{padding:18px 20px;position:relative;overflow:hidden;transition:transform .25s}
+  .goal:hover{transform:translateY(-4px)}
+  .goal.done{box-shadow:0 0 0 1.5px var(--green) inset,var(--shadow)}
+  .goal-top{display:flex;align-items:center;gap:13px;margin-bottom:14px}
+  .goal-ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-size:24px;background:rgba(124,92,255,.16);flex-shrink:0}
+  .goal-meta{flex:1;min-width:0}
+  .goal-name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .goal-sub{font-size:12.5px;color:var(--txt-dim);margin-top:2px;font-variant-numeric:tabular-nums}
+  .goal-actions{display:flex;gap:2px;flex-shrink:0}
+  .goal-actions button{background:transparent;border:0;color:#5a6694;cursor:pointer;font-size:15px;padding:5px 7px;border-radius:8px;transition:.2s}
+  .goal-actions .gedit:hover{color:var(--accent-2);background:rgba(34,211,238,.12)}
+  .goal-actions .gdel:hover{color:var(--red);background:rgba(255,107,139,.12)}
+  .goal-bar{height:12px;border-radius:8px;background:rgba(0,0,0,.3);overflow:hidden;position:relative}
+  .goal-bar i{display:block;height:100%;border-radius:8px;width:0;transition:width .8s cubic-bezier(.3,1,.4,1);background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+  .goal.done .goal-bar i{background:linear-gradient(90deg,var(--green),#16b07f)}
+  .goal-foot{display:flex;align-items:center;justify-content:space-between;margin-top:11px;gap:10px}
+  .goal-pct{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+  .goal-btns{display:flex;gap:7px}
+  .goal-btns button{padding:8px 13px;font-size:12.5px;border-radius:11px}
+  .goal-btns .gwd{background:rgba(0,0,0,.22);border:1px solid var(--glass-brd);color:var(--txt);font-family:inherit;font-weight:700;cursor:pointer;transition:.2s}
+  .goal-btns .gwd:hover{border-color:var(--red);color:var(--red)}
+  .goal-btns .gdep{border:0;color:#fff;font-family:inherit;font-weight:700;cursor:pointer}
+
   /* category management */
   .cat-manage{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
   .cat-manage .item-row{margin-bottom:0}

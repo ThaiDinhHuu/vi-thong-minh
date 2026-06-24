@@ -86,6 +86,16 @@ const I18N={
     'toast.catCreated':'📂 Đã thêm danh mục','toast.catUpdated':'💾 Đã cập nhật danh mục','toast.catSaveFail':'⚠️ Lưu thất bại','toast.catDeleted':'🗑️ Đã xoá danh mục',
     'confirm.deleteCatTitle':'🗑️ Xoá danh mục','confirm.deleteCatMsg':'Xoá danh mục "{name}"? Giao dịch cũ vẫn giữ nhưng sẽ hiện là "Khác".',
     'confirm.deleteTxTitle':'🗑️ Xoá giao dịch','confirm.deleteTxMsg':'Xoá giao dịch "{name}"? Hành động không thể hoàn tác.',
+    'tab.savings':'🐷 Tích lũy','btn.confirm':'Xác nhận',
+    'savings.title':'Hũ tích lũy','savings.add':'➕ Tạo hũ mới','savings.empty':'Chưa có hũ nào. Tạo hũ đầu tiên!',
+    'savings.hint':'Đặt mục tiêu và nạp tiền từ ví vào hũ để theo dõi tiến độ. Tiền trong hũ vẫn là tài sản của bạn.',
+    'savings.addTitle':'➕ Tạo hũ tích lũy','savings.editTitle':'✏️ Sửa hũ','savings.name':'Tên mục tiêu','savings.namePh':'VD: Mua xe máy','savings.target':'Số tiền mục tiêu (₫)','savings.icon':'Biểu tượng',
+    'savings.deposit':'Nạp','savings.withdraw':'Rút','savings.depositTitle':'Nạp vào hũ','savings.withdrawTitle':'Rút từ hũ','savings.fromWallet':'Từ ví','savings.toWallet':'Đến ví','savings.jar':'Hũ tích lũy',
+    'savings.enterName':'⚠️ Nhập tên mục tiêu','savings.enterTarget':'⚠️ Nhập số tiền mục tiêu',
+    'savings.depositDesc':'Nạp hũ {name}','savings.withdrawDesc':'Rút hũ {name}','savings.closeDesc':'Đóng hũ {name}',
+    'toast.goalCreated':'🐷 Đã tạo hũ','toast.goalUpdated':'💾 Đã cập nhật hũ','toast.goalDeleted':'🗑️ Đã xoá hũ',
+    'toast.deposited':'🐷 Đã nạp {amt}','toast.withdrawn':'💸 Đã rút {amt}','toast.pickWallet':'⚠️ Chọn ví','toast.exceedSaved':'⚠️ Vượt quá số dư trong hũ','toast.need1Wallet':'⚠️ Cần ít nhất 1 ví',
+    'confirm.deleteGoalTitle':'🗑️ Xoá hũ','confirm.deleteGoalMsg':'Xoá hũ "{name}"?','confirm.deleteGoalMoneyMsg':'Xoá hũ "{name}"? Số tiền {amt} sẽ được chuyển về ví {wallet}.',
     'err.generic':'Đã xảy ra lỗi',
     'err.auth/invalid-email':'Email không hợp lệ','err.auth/user-not-found':'Tài khoản không tồn tại','err.auth/wrong-password':'Sai mật khẩu',
     'err.auth/invalid-credential':'Email hoặc mật khẩu không đúng','err.auth/email-already-in-use':'Email đã được đăng ký','err.auth/weak-password':'Mật khẩu quá yếu (tối thiểu 6 ký tự)',
@@ -155,6 +165,16 @@ const I18N={
     'toast.catCreated':'📂 Category added','toast.catUpdated':'💾 Category updated','toast.catSaveFail':'⚠️ Save failed','toast.catDeleted':'🗑️ Category deleted',
     'confirm.deleteCatTitle':'🗑️ Delete category','confirm.deleteCatMsg':'Delete category "{name}"? Past transactions are kept but will show as "Other".',
     'confirm.deleteTxTitle':'🗑️ Delete transaction','confirm.deleteTxMsg':'Delete transaction "{name}"? This cannot be undone.',
+    'tab.savings':'🐷 Savings','btn.confirm':'Confirm',
+    'savings.title':'Savings goals','savings.add':'➕ New goal','savings.empty':'No goals yet. Create your first one!',
+    'savings.hint':'Set a goal and move money from your wallets into the jar to track progress. Money in jars is still your asset.',
+    'savings.addTitle':'➕ New savings goal','savings.editTitle':'✏️ Edit goal','savings.name':'Goal name','savings.namePh':'e.g. Buy a motorbike','savings.target':'Target amount (₫)','savings.icon':'Icon',
+    'savings.deposit':'Deposit','savings.withdraw':'Withdraw','savings.depositTitle':'Deposit to jar','savings.withdrawTitle':'Withdraw from jar','savings.fromWallet':'From wallet','savings.toWallet':'To wallet','savings.jar':'Savings jar',
+    'savings.enterName':'⚠️ Enter a goal name','savings.enterTarget':'⚠️ Enter a target amount',
+    'savings.depositDesc':'Deposit to {name}','savings.withdrawDesc':'Withdraw from {name}','savings.closeDesc':'Close jar {name}',
+    'toast.goalCreated':'🐷 Goal created','toast.goalUpdated':'💾 Goal updated','toast.goalDeleted':'🗑️ Goal deleted',
+    'toast.deposited':'🐷 Deposited {amt}','toast.withdrawn':'💸 Withdrew {amt}','toast.pickWallet':'⚠️ Pick a wallet','toast.exceedSaved':'⚠️ Exceeds jar balance','toast.need1Wallet':'⚠️ Need at least 1 wallet',
+    'confirm.deleteGoalTitle':'🗑️ Delete goal','confirm.deleteGoalMsg':'Delete goal "{name}"?','confirm.deleteGoalMoneyMsg':'Delete goal "{name}"? {amt} will be returned to {wallet}.',
     'err.generic':'Something went wrong',
     'err.auth/invalid-email':'Invalid email','err.auth/user-not-found':'Account not found','err.auth/wrong-password':'Wrong password',
     'err.auth/invalid-credential':'Email or password is incorrect','err.auth/email-already-in-use':'Email already registered','err.auth/weak-password':'Password too weak (min 6 characters)',
@@ -185,6 +205,7 @@ const DEFAULT_CATS={
 // Live categories (Firebase-backed). Initialized from defaults so UI works before sync.
 let CATS={expense:DEFAULT_CATS.expense.map(c=>({...c})),income:DEFAULT_CATS.income.map(c=>({...c}))};
 const CAT_EMOJIS=['🍜','🍔','🍕','🍳','☕','🍰','🍺','🍱','🛒','🛍️','👕','👟','💄','🚕','🚌','⛽','🚗','✈️','🏠','🛋️','🔧','💡','🎮','🎬','🎵','🎤','🎁','📚','✏️','🎓','💊','🏥','💪','🐶','✂️','🧾','📱','💻','🌐','🔌','💰','💵','🏦','💳','📈','📊','🏖️','🎉','❤️','🙏','📦','⚽','🍎','🌸'];
+const GOAL_ICONS=['🐷','🏍️','🚗','🏠','✈️','💍','🎓','📱','💻','🏖️','🎁','💰','🚑','👶','🐶','🎮','💵','⛑️','🛡️','🌴'];
 const WALLET_ICONS=['💵','🏦','💳','📱','🪙','💰','🏧','🐷'];
 const WALLET_COLORS={'💵':'#34e0a1','🏦':'#60a5fa','💳':'#ff6b8b','📱':'#a78bfa','🪙':'#ffb86b','💰':'#22d3ee','🏧':'#7c5cff','🐷':'#ff6bcb'};
 const COLORS=['#7c5cff','#22d3ee','#34e0a1','#ffb86b','#ff6b8b','#ff6bcb','#a78bfa','#60a5fa','#f472b6'];
@@ -195,7 +216,7 @@ let state={
   recType:'expense', recCat:'food', recIcon:'💵',
   wIcon:'💵',
   filter:{q:'',type:'all',cat:'all',wallet:'all',from:'',to:''},
-  txs:[], wallets:[], recurring:[], budget:{total:0,perCat:{}},
+  txs:[], wallets:[], recurring:[], goals:[], budget:{total:0,perCat:{}},
 };
 let chart, db, auth, currentUser=null;
 let unsubs=[];
@@ -356,7 +377,11 @@ function buildThemeGrid(){
 
 const escapeHtml=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const walletById=id=>state.wallets.find(w=>w.id===id);
-const walletName=id=>{const w=walletById(id);return w?`${w.icon} ${w.name}`:'—';};
+const walletName=id=>{
+  if(id&&id.indexOf&&id.indexOf('g:')===0){const g=state.goals.find(x=>x.id===id.slice(2));return g?`${g.emo} ${g.name}`:'🐷 '+t('savings.jar');}
+  const w=walletById(id);return w?`${w.icon} ${w.name}`:'—';
+};
+function goalSaved(id){const gref='g:'+id;let s=0;for(const tr of state.txs){if(tr.type==='transfer'){if(tr.toWallet===gref)s+=tr.amount;if(tr.fromWallet===gref)s-=tr.amount;}}return s;}
 
 function toast(msg,kind){const el=$('#toast');el.className='toast show'+(kind?' '+kind:'');el.innerHTML=msg;clearTimeout(el._tm);el._tm=setTimeout(()=>el.classList.remove('show'),2600);}
 const show=el=>el.classList.remove('app-hidden');
@@ -391,7 +416,7 @@ function applyLang(){
   setAuthTexts();
   renderFormCats();renderRecCats();renderEtCats();
   updateCollapseAllLabel();
-  renderAll();renderRecurring();renderBudget();renderCategoryManage();
+  renderAll();renderRecurring();renderBudget();renderCategoryManage();renderSavings();
   syncCsels();
 }
 function setLang(l){lang=l;localStorage.setItem('vtm_lang',l);applyLang();}
@@ -411,7 +436,7 @@ else{
       paintUser(user);subscribeAll(user.uid);
     }else{
       unsubs.forEach(u=>u&&u());unsubs=[];recurringBusy=false;walletsLoaded=false;recurringLoaded=false;
-      state.txs=[];state.wallets=[];state.recurring=[];state.budget={total:0,perCat:{}};
+      state.txs=[];state.wallets=[];state.recurring=[];state.goals=[];state.budget={total:0,perCat:{}};
       renderAll();hide($('#appRoot'));hide($('#loadingCard'));$('#overlay').classList.remove('hide');show($('#authCard'));
     }
   });
@@ -460,6 +485,11 @@ function subscribeAll(uid){
     recurringLoaded=true;
     renderRecurring();maybeRunRecurring();
   }));
+
+  unsubs.push(onSnapshot(col(uid,'goals'),snap=>{
+    state.goals=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+    renderSavings();renderStats();renderList();
+  },err=>console.error(err)));
 
   unsubs.push(onSnapshot(doc(db,'users',uid,'settings','budget'),snap=>{
     const d=snap.data()||{};state.budget={total:d.total||0,perCat:d.perCat||{}};
@@ -590,31 +620,33 @@ function animateNumber(el,to){
 function renderStats(){
   const inc=state.txs.filter(tr=>tr.type==='income').reduce((s,tr)=>s+tr.amount,0);
   const exp=state.txs.filter(tr=>tr.type==='expense').reduce((s,tr)=>s+tr.amount,0);
-  const bal=state.wallets.reduce((s,w)=>s+walletBalance(w),0);
+  const walletsTotal=state.wallets.reduce((s,w)=>s+walletBalance(w),0);
+  const goalsTotal=state.goals.reduce((s,g)=>s+goalSaved(g.id),0);
+  const bal=walletsTotal+goalsTotal;
   animateNumber($('#balanceVal'),bal);
   animateNumber($('#incomeVal'),inc);
   animateNumber($('#expenseVal'),exp);
   $('#balanceSub').textContent=t('stat.walletsN',{n:state.wallets.length})+' • '+(bal>=0?t('stat.stable'):t('stat.negative'));
   $('#incomeSub').textContent=t('stat.txCount',{n:state.txs.filter(tr=>tr.type==='income').length});
   $('#expenseSub').textContent=t('stat.txCount',{n:state.txs.filter(tr=>tr.type==='expense').length});
-  // per-wallet breakdown
+  // per-wallet (+ savings) breakdown
   const inner=$('#walletBreakInner'), toggle=$('#walletToggle');
   if(inner){
-    if(!state.wallets.length){
+    if(!state.wallets.length && !state.goals.length){
       inner.innerHTML=`<div class="hint" style="padding:6px 0">${t('stat.noWallets')}</div>`;
       if(toggle)toggle.style.display='none';
     }else{
       if(toggle)toggle.style.display='';
-      const maxAbs=Math.max(1,...state.wallets.map(w=>Math.abs(walletBalance(w))));
-      inner.innerHTML=state.wallets.map(w=>{
-        const b=walletBalance(w), c=WALLET_COLORS[w.icon]||'#7c5cff', pct=Math.round(Math.abs(b)/maxAbs*100);
-        return `<div class="wb-row">
-          <div class="wb-ic" style="background:${c}22;color:${c}">${w.icon}</div>
-          <div class="wb-info"><div class="wb-name">${escapeHtml(w.name)}</div>
-            <div class="wb-bar"><i style="width:${pct}%;background:${c}"></i></div></div>
-          <div class="wb-amt" style="color:${b>=0?'#fff':'var(--red)'}">${fmt(b)}</div>
+      const maxAbs=Math.max(1,...state.wallets.map(w=>Math.abs(walletBalance(w))),...state.goals.map(g=>Math.abs(goalSaved(g.id))));
+      const row=(emo,name,amt,c)=>`<div class="wb-row">
+          <div class="wb-ic" style="background:${c}22;color:${c}">${emo}</div>
+          <div class="wb-info"><div class="wb-name">${escapeHtml(name)}</div>
+            <div class="wb-bar"><i style="width:${Math.round(Math.abs(amt)/maxAbs*100)}%;background:${c}"></i></div></div>
+          <div class="wb-amt" style="color:${amt>=0?'#fff':'var(--red)'}">${fmt(amt)}</div>
         </div>`;
-      }).join('');
+      let html=state.wallets.map(w=>row(w.icon,w.name,walletBalance(w),WALLET_COLORS[w.icon]||'#7c5cff')).join('');
+      html+=state.goals.map(g=>row(g.emo,g.name,goalSaved(g.id),'#7c5cff')).join('');
+      inner.innerHTML=html;
     }
   }
 }
@@ -744,7 +776,7 @@ function renderWallets(){
   });
   // populate wallet selectors
   const opts=state.wallets.map(w=>`<option value="${w.id}">${w.icon} ${escapeHtml(w.name)}</option>`).join('');
-  ['#walletInput','#recWallet','#trFrom','#trTo','#etWallet','#etFrom','#etTo'].forEach(sel=>{
+  ['#walletInput','#recWallet','#trFrom','#trTo','#etWallet','#etFrom','#etTo','#gmWallet'].forEach(sel=>{
     const e=$(sel);if(!e)return;const cur=e.value;e.innerHTML=opts;
     if([...e.options].some(o=>o.value===cur))e.value=cur;
   });
@@ -1031,6 +1063,101 @@ function updateCollapseAllLabel(){
   $('#collapseAll').innerHTML=allCollapsed?t('list.expand'):t('list.collapse');
 }
 
+/* ===== Savings goals ===== */
+let goalEditId=null, goalEmoji='🐷';
+function renderGoalEmojis(){
+  const wrap=$('#goalEmojis');if(!wrap)return;wrap.innerHTML='';
+  GOAL_ICONS.forEach(ic=>{const el=document.createElement('div');el.className='cat'+(ic===goalEmoji?' sel':'');
+    el.innerHTML=`<span class="emo">${ic}</span>`;el.onclick=()=>{goalEmoji=ic;renderGoalEmojis();};wrap.appendChild(el);});
+}
+function renderSavings(){
+  const grid=$('#goalGrid');if(!grid)return;grid.innerHTML='';
+  if(!state.goals.length){grid.innerHTML=`<div class="hint">${t('savings.empty')}</div>`;return;}
+  state.goals.forEach(g=>{
+    const saved=goalSaved(g.id), target=g.target||0;
+    const pct=target?Math.min(saved/target*100,100):0, realPct=target?Math.round(saved/target*100):0;
+    const done=target&&saved>=target;
+    const el=document.createElement('div');el.className='glass goal'+(done?' done':'');
+    el.innerHTML=`<div class="goal-top">
+        <div class="goal-ic">${g.emo}</div>
+        <div class="goal-meta"><div class="goal-name">${escapeHtml(g.name)}${done?' ✅':''}</div>
+          <div class="goal-sub">${fmt(saved)} / ${fmt(target)}</div></div>
+        <div class="goal-actions"><button class="gedit" title="${t('tt.edit')}">✎</button><button class="gdel" title="${t('tt.delete')}">🗑</button></div>
+      </div>
+      <div class="goal-bar"><i style="width:${pct}%"></i></div>
+      <div class="goal-foot"><span class="goal-pct">${realPct}%</span>
+        <div class="goal-btns"><button class="gwd">− ${t('savings.withdraw')}</button><button class="gdep btn-grad" style="box-shadow:none">＋ ${t('savings.deposit')}</button></div></div>`;
+    el.querySelector('.gedit').onclick=()=>openGoalEdit(g);
+    el.querySelector('.gdel').onclick=()=>deleteGoal(g);
+    el.querySelector('.gdep').onclick=()=>openGoalMove(g,'deposit');
+    el.querySelector('.gwd').onclick=()=>openGoalMove(g,'withdraw');
+    grid.appendChild(el);
+  });
+}
+function openGoalAdd(){
+  goalEditId=null;goalEmoji=GOAL_ICONS[0];
+  $('#goalModalTitle').textContent=t('savings.addTitle');
+  $('#goalName').value='';$('#goalTarget').value='';renderGoalEmojis();
+  $('#goalModal').classList.add('show');setTimeout(()=>$('#goalName').focus(),50);
+}
+function openGoalEdit(g){
+  goalEditId=g.id;goalEmoji=g.emo||GOAL_ICONS[0];
+  $('#goalModalTitle').textContent=t('savings.editTitle');
+  $('#goalName').value=g.name;$('#goalTarget').value=g.target?Number(g.target).toLocaleString('en-US'):'';
+  renderGoalEmojis();$('#goalModal').classList.add('show');
+}
+async function saveGoal(){
+  if(!currentUser)return;
+  const name=$('#goalName').value.trim();const target=num($('#goalTarget').value);
+  if(!name){toast(t('savings.enterName'),'warn');shake($('#goalName'));return;}
+  if(target<=0){toast(t('savings.enterTarget'),'warn');shake($('#goalTarget'));return;}
+  try{
+    if(goalEditId)await updateDoc(doc(db,'users',currentUser.uid,'goals',goalEditId),{name,target,emo:goalEmoji});
+    else await addDoc(col(currentUser.uid,'goals'),{name,target,emo:goalEmoji,order:state.goals.length,createdAt:serverTimestamp()});
+    $('#goalModal').classList.remove('show');toast(goalEditId?t('toast.goalUpdated'):t('toast.goalCreated'));
+  }catch(e){console.error(e);toast(t('toast.catSaveFail'),'danger');}
+}
+async function deleteGoal(g){
+  const saved=goalSaved(g.id), firstW=state.wallets[0];
+  const msg=(saved>0&&firstW)
+    ?t('confirm.deleteGoalMoneyMsg',{name:g.name,amt:fmt(saved),wallet:firstW.icon+' '+firstW.name})
+    :t('confirm.deleteGoalMsg',{name:g.name});
+  const ok=await confirmDialog(msg,{title:t('confirm.deleteGoalTitle')});
+  if(!ok)return;
+  try{
+    if(saved>0&&firstW){
+      await addDoc(col(currentUser.uid,'transactions'),{type:'transfer',amount:saved,fromWallet:'g:'+g.id,toWallet:firstW.id,desc:t('savings.closeDesc',{name:g.name}),date:todayISO(),createdAt:serverTimestamp()});
+    }
+    await deleteDoc(doc(db,'users',currentUser.uid,'goals',g.id));toast(t('toast.goalDeleted'));
+  }catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+let gmGoalId=null, gmMode='deposit';
+function openGoalMove(g,mode){
+  if(!state.wallets.length){toast(t('toast.need1Wallet'),'warn');return;}
+  gmGoalId=g.id;gmMode=mode;
+  $('#goalMoveTitle').textContent=(mode==='deposit'?t('savings.depositTitle'):t('savings.withdrawTitle'))+' · '+g.emo+' '+g.name;
+  $('#goalMoveWalletLabel').textContent=mode==='deposit'?t('savings.fromWallet'):t('savings.toWallet');
+  $('#gmAmt').value='';datePicker.set('gmDate',todayISO());
+  $('#goalMoveModal').classList.add('show');syncCsels();
+}
+async function doGoalMove(){
+  if(!currentUser||!gmGoalId)return;
+  const wallet=$('#gmWallet').value;const amount=num($('#gmAmt').value);const date=datePicker.get('gmDate')||todayISO();
+  const g=state.goals.find(x=>x.id===gmGoalId);if(!g)return;
+  if(!wallet){toast(t('toast.pickWallet'),'warn');return;}
+  if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#gmAmt'));return;}
+  const gref='g:'+gmGoalId;let data;
+  if(gmMode==='deposit'){
+    data={type:'transfer',amount,fromWallet:wallet,toWallet:gref,desc:t('savings.depositDesc',{name:g.name}),date,createdAt:serverTimestamp()};
+  }else{
+    if(amount>goalSaved(gmGoalId)){toast(t('toast.exceedSaved'),'warn');shake($('#gmAmt'));return;}
+    data={type:'transfer',amount,fromWallet:gref,toWallet:wallet,desc:t('savings.withdrawDesc',{name:g.name}),date,createdAt:serverTimestamp()};
+  }
+  try{await addDoc(col(currentUser.uid,'transactions'),data);$('#goalMoveModal').classList.remove('show');
+    toast(gmMode==='deposit'?t('toast.deposited',{amt:fmt(amount)}):t('toast.withdrawn',{amt:fmt(amount)}));
+  }catch(e){console.error(e);toast(t('toast.transferFail'),'danger');}
+}
+
 function renderAll(){renderStats();renderWallets();renderList();renderChart();renderBudgetBanner();syncCsels();}
 
 function shake(el){el.style.animation='none';el.offsetHeight;el.style.animation='shake .4s';el.style.borderColor='var(--red)';setTimeout(()=>el.style.borderColor='',500);}
@@ -1108,6 +1235,7 @@ function activateTab(name){
   $$('.tab-page').forEach(p=>p.classList.remove('on'));$('#page-'+name).classList.add('on');
   if(name==='budget')renderBudget();
   if(name==='cats')renderCategoryManage();
+  if(name==='savings')renderSavings();
 }
 $$('#tabs button').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
 // Khôi phục tab đã xem trước khi F5
@@ -1226,6 +1354,18 @@ $('#addRecBtn').onclick=addRecurring;
 
 // Budget
 $('#saveBudgetBtn').onclick=saveBudgetTotal;
+
+// Savings goals
+attachThousands($('#goalTarget'));attachThousands($('#gmAmt'));datePicker.attach($('#gmDate'));
+$('#addGoalBtn').onclick=openGoalAdd;
+$('#goalCancel').onclick=()=>$('#goalModal').classList.remove('show');
+$('#goalSave').onclick=saveGoal;
+$('#goalName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#goalTarget').focus();});
+$('#goalModal').addEventListener('click',e=>{if(e.target===$('#goalModal'))$('#goalModal').classList.remove('show');});
+$('#gmCancel').onclick=()=>$('#goalMoveModal').classList.remove('show');
+$('#gmConfirm').onclick=doGoalMove;
+$('#gmAmt').addEventListener('keydown',e=>{if(e.key==='Enter')doGoalMove();});
+$('#goalMoveModal').addEventListener('click',e=>{if(e.target===$('#goalMoveModal'))$('#goalMoveModal').classList.remove('show');});
 
 // Categories
 $('#addExpenseCatBtn').onclick=()=>openCatAdd('expense');

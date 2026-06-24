@@ -69,6 +69,7 @@
       <button data-tab="wallets" data-i18n="tab.wallets">💳 Ví</button>
       <button data-tab="recurring" data-i18n="tab.recurring">🔁 Định kỳ</button>
       <button data-tab="budget" data-i18n="tab.budget">🎯 Ngân sách</button>
+      <button data-tab="savings" data-i18n="tab.savings">🐷 Tích lũy</button>
       <button data-tab="cats" data-i18n="tab.cats">📂 Danh mục</button>
     </div>
 
@@ -225,6 +226,17 @@
       </div>
     </div>
 
+    <!-- ===== TAB: SAVINGS GOALS ===== -->
+    <div class="tab-page" id="page-savings">
+      <div class="panel glass">
+        <h2><span class="dot"></span> <span data-i18n="savings.title">Hũ tích lũy</span>
+          <span class="right"><button class="btn-ghost" id="addGoalBtn" style="padding:8px 14px;font-size:13px" data-i18n="savings.add">➕ Tạo hũ mới</button></span>
+        </h2>
+        <p class="hint" style="margin-bottom:16px" data-i18n="savings.hint">Đặt mục tiêu và nạp tiền từ ví vào hũ để theo dõi tiến độ. Tiền trong hũ vẫn là tài sản của bạn.</p>
+        <div class="goal-grid" id="goalGrid"></div>
+      </div>
+    </div>
+
     <!-- ===== TAB: CATEGORIES ===== -->
     <div class="tab-page" id="page-cats">
       <div class="panel glass" style="margin-bottom:18px">
@@ -302,6 +314,36 @@
       <div class="modal-actions">
         <button class="btn-ghost" id="etCancel" data-i18n="btn.cancel">Huỷ</button>
         <button class="btn-grad" id="etSave" style="box-shadow:none" data-i18n="btn.saveChanges">💾 Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GOAL MODAL (add/edit) ===== -->
+  <div class="modal-bg" id="goalModal">
+    <div class="glass modal">
+      <h3 id="goalModalTitle" data-i18n="savings.addTitle">➕ Tạo hũ tích lũy</h3>
+      <div class="field"><label data-i18n="savings.name">Tên mục tiêu</label><input id="goalName" maxlength="24" placeholder="VD: Mua xe máy" data-i18n-ph="savings.namePh" /></div>
+      <div class="field"><label data-i18n="savings.target">Số tiền mục tiêu (₫)</label><input id="goalTarget" type="text" inputmode="numeric" placeholder="VD: 40,000,000" autocomplete="off" /></div>
+      <div class="field"><label data-i18n="savings.icon">Biểu tượng</label><div class="cats emoji-grid" id="goalEmojis"></div></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="goalCancel" data-i18n="btn.cancel">Huỷ</button>
+        <button class="btn-grad" id="goalSave" style="box-shadow:none" data-i18n="btn.saveChanges">💾 Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GOAL MOVE MODAL (deposit/withdraw) ===== -->
+  <div class="modal-bg" id="goalMoveModal">
+    <div class="glass modal">
+      <h3 id="goalMoveTitle">Nạp vào hũ</h3>
+      <div class="field"><label id="goalMoveWalletLabel" data-i18n="savings.fromWallet">Từ ví</label><select id="gmWallet"></select></div>
+      <div class="row2">
+        <div class="field"><label data-i18n="form.amount">Số tiền (₫)</label><input id="gmAmt" type="text" inputmode="numeric" placeholder="0" autocomplete="off" /></div>
+        <div class="field"><label data-i18n="form.date">Ngày</label><input id="gmDate" type="date" /></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="gmCancel" data-i18n="btn.cancel">Huỷ</button>
+        <button class="btn-grad" id="gmConfirm" style="box-shadow:none" data-i18n="btn.confirm">Xác nhận</button>
       </div>
     </div>
   </div>
