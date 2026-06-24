@@ -35,6 +35,10 @@
     --field:#2B2930; --field-2:#36343C; --track:#48464E;
     --row:#26242B; --hover:color-mix(in srgb,var(--accent) 18%,transparent);
   }
+  /* ---- Đổi Sáng/Tối: hiệu ứng quét từ PHẢI sang TRÁI ---- */
+  @keyframes mode-wipe{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
+  html.mode-anim::view-transition-old(root){animation:none}
+  html.mode-anim::view-transition-new(root){animation:mode-wipe .5s cubic-bezier(.4,0,.2,1) both}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--txt);background:var(--bg-0);overflow-x:hidden;min-height:100vh;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:-.1px}
