@@ -1249,6 +1249,18 @@ function placeThemePop(){
   pop.style.left=left+'px';pop.style.top=(r.bottom+8)+'px';
 }
 function closeThemePop(){$('#themePop').classList.remove('open');}
+
+// Chế độ Sáng / Tối (Material 3)
+function applyMode(m){
+  document.documentElement.dataset.mode=m;
+  try{localStorage.setItem('vtm_mode',m);}catch(e){}
+  const btn=$('#modeBtn');
+  if(btn){btn.textContent=m==='dark'?'☀️':'🌙';btn.title=S.lang==='en'?(m==='dark'?'Light mode':'Dark mode'):(m==='dark'?'Chế độ sáng':'Chế độ tối');}
+  const tc=document.querySelector('meta[name=theme-color]');
+  if(tc)tc.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--bg-0').trim()||'#FEF7FF');
+}
+applyMode(document.documentElement.dataset.mode||'light');
+$('#modeBtn').onclick=()=>applyMode(document.documentElement.dataset.mode==='dark'?'light':'dark');
 $('#themeBtn').onclick=e=>{e.stopPropagation();const open=$('#themePop').classList.toggle('open');if(open){buildThemeGrid();placeThemePop();}};
 document.addEventListener('click',e=>{const p=$('#themePop'),b=$('#themeBtn');if(p.classList.contains('open')&&!p.contains(e.target)&&!b.contains(e.target))closeThemePop();});
 window.addEventListener('resize',closeThemePop);

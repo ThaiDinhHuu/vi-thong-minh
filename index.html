@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/components.css" />
 <link rel="stylesheet" href="css/features.css" />
-<script>try{var _t=localStorage.getItem('vtm_theme');if(_t)document.documentElement.dataset.theme=_t;}catch(e){}</script>
+<script>try{var _t=localStorage.getItem('vtm_theme');if(_t)document.documentElement.dataset.theme=_t;var _m=localStorage.getItem('vtm_mode')||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.mode=_m;}catch(e){}</script>
 </head>
 <body>
   <div class="bg"><div class="blob a"></div><div class="blob b"></div><div class="blob c"></div></div>
@@ -80,6 +80,7 @@
             <button data-lang="vi">VI</button>
             <button data-lang="en">EN</button>
           </div>
+          <button class="icon-btn mode-btn" id="modeBtn" title="Sáng / Tối">🌙</button>
           <button class="icon-btn theme-btn" id="themeBtn" title="Đổi giao diện" data-i18n="nav.theme">🎨 Giao diện</button>
           <button class="icon-btn danger" id="logoutBtn" data-i18n="nav.logout">↩ Đăng xuất</button>
         </div>

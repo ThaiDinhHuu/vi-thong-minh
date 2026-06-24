@@ -3,6 +3,7 @@
     /* Material Design 3 — Light (key color tím #6750A4) */
     --accent:#6750A4; --accent-2:#7F67BE; --blob-c:#7D5260;
     --primary-container:color-mix(in srgb,var(--accent) 16%,#fff);
+    --accent-ink:var(--accent);   /* màu chữ trên primary-container */
     --bg-0:#FEF7FF; --bg-1:#FEF7FF;
     --card:#FFFFFF; --glass:#FFFFFF; --pop:#FFFFFF;
     --glass-brd:#CAC4D0; --glass-hi:transparent;             /* outline-variant */
@@ -21,6 +22,19 @@
   html[data-theme="sakura"]{--accent:#db2777;--accent-2:#8b5cf6;--blob-c:#f0abfc}
   html[data-theme="ruby"]{--accent:#dc2626;--accent-2:#ea580c;--blob-c:#fb7185}
   html[data-theme="midnight"]{--accent:#475569;--accent-2:#0284c7;--blob-c:#818cf8}
+  /* ---- Chế độ TỐI (Material 3 dark surfaces) — giữ nguyên màu nhấn ---- */
+  html[data-mode="dark"]{
+    --bg-0:#141218; --bg-1:#141218;
+    --card:#211F26; --glass:#211F26; --pop:#2B2930;
+    --glass-brd:#48464E;
+    --txt:#E6E0E9; --txt-dim:#C9C4CF;
+    --green:#7CD992; --red:#F2B8B5; --amber:#E6C36B;
+    --shadow:0 1px 3px rgba(0,0,0,.55),0 6px 14px -4px rgba(0,0,0,.55);
+    --primary-container:color-mix(in srgb,var(--accent) 34%,#1b1a20);
+    --accent-ink:color-mix(in srgb,var(--accent) 45%,#fff);
+    --field:#2B2930; --field-2:#36343C; --track:#48464E;
+    --row:#26242B; --hover:color-mix(in srgb,var(--accent) 18%,transparent);
+  }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--txt);background:var(--bg-0);overflow-x:hidden;min-height:100vh;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:-.1px}
@@ -52,7 +66,7 @@
   .lang-seg{display:inline-flex;background:var(--glass);border:1px solid var(--glass-brd);border-radius:100px;padding:3px}
   .lang-seg button{border:0;background:transparent;color:var(--txt-dim);font-family:inherit;font-weight:700;font-size:12px;padding:7px 11px;border-radius:10px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:4px}
   .lang-seg button:hover{color:var(--txt)}
-  .lang-seg button.on{background:var(--primary-container);color:var(--accent)}
+  .lang-seg button.on{background:var(--primary-container);color:var(--accent-ink)}
 
   .glass{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow)}
 
@@ -71,7 +85,7 @@
   .tabs{display:flex;flex-direction:column;gap:4px;margin-top:8px}
   .tabs button{width:100%;border:0;background:transparent;color:var(--txt-dim);padding:12px 16px;border-radius:100px;cursor:pointer;font-family:inherit;font-weight:600;font-size:14px;transition:.2s;display:flex;align-items:center;justify-content:flex-start;gap:12px;white-space:nowrap}
   .tabs button:hover{background:var(--hover);color:var(--txt)}
-  .tabs button.on{color:var(--accent);background:var(--primary-container);font-weight:700}
+  .tabs button.on{color:var(--accent-ink);background:var(--primary-container);font-weight:700}
   .tab-ic{font-size:18px;width:22px;text-align:center;flex-shrink:0;line-height:1}
   .side-collapse{margin-top:auto;display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;color:var(--txt-dim);padding:12px 14px;border-radius:13px;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;transition:.2s;justify-content:flex-start}
   .side-collapse:hover{background:var(--hover);color:var(--txt)}
@@ -200,7 +214,7 @@
   .cat .emo{font-size:20px;display:block;margin-bottom:4px;transition:transform .22s}
   .cat:hover{transform:translateY(-3px);border-color:var(--accent)}
   .cat:hover .emo{transform:scale(1.2)}
-  .cat.sel{background:var(--primary-container);border-color:var(--accent);color:var(--accent)}
+  .cat.sel{background:var(--primary-container);border-color:var(--accent);color:var(--accent-ink)}
 
   .btn-grad{width:100%;border:0;border-radius:100px;padding:14px;font-family:inherit;font-weight:700;font-size:15px;letter-spacing:.1px;color:#fff;cursor:pointer;background:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.30),0 1px 3px 1px rgba(0,0,0,.15);transition:box-shadow .2s,filter .2s;position:relative;overflow:hidden}
   .btn-grad:hover{box-shadow:0 1px 2px rgba(0,0,0,.30),0 4px 8px 3px rgba(0,0,0,.15);filter:brightness(1.06)}
