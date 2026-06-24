@@ -121,21 +121,32 @@ export function circleReveal(originEl,changeFn,opts={}){
   root.classList.add('mode-anim',expand?'mode-expand':'mode-collapse');
   const vt=document.startViewTransition(changeFn);
   vt.ready.then(()=>{
-    // Mép gợn sóng KHÔNG đều: trộn nhiều tần số lệch nhau + seed ngẫu nhiên mỗi lần
-    const N=36, amp=0.32, s1=Math.random()*6.28, s2=Math.random()*6.28, s3=Math.random()*6.28;
-    const blob=R=>{
+    // Mép gợn sóng MỀM: nhiều điểm (cạnh mượt như đường cong), tần số thấp (búi sóng to tròn),
+    // và nhiều khung trung gian có xoay pha để mép uốn lượn khi lan ra.
+    const N=84, amp=0.3, reach=end*1.12;
+    const s1=Math.random()*6.28, s2=Math.random()*6.28, s3=Math.random()*6.28;
+    const blob=(R,ph)=>{
       let p=[];
       for(let i=0;i<N;i++){
         const a=i/N*Math.PI*2;
-        const w=(Math.sin(a*5+s1)+Math.sin(a*8+s2)+Math.sin(a*13+s3))/3; // [-1,1]
+        // tần số thấp + lệch pha → lượn sóng to, mềm; ph làm mép xoay/uốn theo thời gian
+        const w=(Math.sin(a*2+s1+ph)+Math.sin(a*3+s2+ph*1.25)+Math.sin(a*5+s3-ph*0.6))/3; // [-1,1]
         const r=R*(1+amp*(w*0.5+0.5)); // f∈[1,1+amp] → đáy sóng vẫn phủ kín
         p.push(`${(x+Math.cos(a)*r).toFixed(1)}px ${(y+Math.sin(a)*r).toFixed(1)}px`);
       }
       return `polygon(${p.join(',')})`;
     };
-    const c0=blob(0.001), c1=blob(end);
-    root.animate({clipPath:expand?[c0,c1]:[c1,c0]},
-      {duration,easing:'cubic-bezier(.4,0,.2,1)',pseudoElement:expand?'::view-transition-new(root)':'::view-transition-old(root)'});
+    const F=8, frames=[];
+    for(let k=0;k<=F;k++){
+      const tt=k/F;
+      const e=1-Math.pow(1-tt,3);          // easeOutCubic cho bán kính → giãn nở mượt, chậm dần
+      const R=Math.max(0.001,reach*e);
+      const ph=tt*Math.PI*1.1;             // pha trôi dần → mép sóng uốn lượn trong lúc lan
+      frames.push(blob(R,ph));
+    }
+    const seq=expand?frames:frames.slice().reverse();
+    root.animate({clipPath:seq},
+      {duration,easing:'linear',pseudoElement:expand?'::view-transition-new(root)':'::view-transition-old(root)'});
   });
   vt.finished.finally(()=>root.classList.remove('mode-anim','mode-expand','mode-collapse'));
 }

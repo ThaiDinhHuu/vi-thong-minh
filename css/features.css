@@ -144,10 +144,8 @@
   .photo-thumb{position:relative;width:58px;height:58px;border-radius:12px;overflow:hidden;border:1px solid var(--glass-brd);flex-shrink:0}
   .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
   .photo-rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:11px;display:grid;place-items:center;line-height:1}
-  .tx .act .viewp{background:transparent;border:0;color:#5a6694;cursor:pointer;font-size:15px;padding:4px 7px;border-radius:8px;transition:.2s;opacity:0}
-  .tx:hover .act .viewp{opacity:1}
-  .tx .act .viewp:hover{color:var(--accent-2);background:rgba(34,211,238,.12)}
-  @media(hover:none){.tx .act .viewp{opacity:.7}}
+  .tx .act .viewp{background:var(--field-2);border:0;color:var(--txt-dim);cursor:pointer;font-size:15px;width:34px;height:34px;display:grid;place-items:center;border-radius:9px;transition:.2s}
+  .tx .act .viewp:hover{color:var(--accent-2);background:rgba(34,211,238,.16)}
   #photoLightbox{cursor:zoom-out}
   .lightbox-img{max-width:92vw;max-height:88vh;border-radius:14px;box-shadow:var(--shadow);transform:scale(.94);transition:transform .25s}
   #photoLightbox.show .lightbox-img{transform:scale(1)}
