@@ -1,0 +1,1115 @@
+// ===== Logic giao diện + sự kiện (điểm vào của app) =====
+import { S, state, DEFAULT_CATS, CAT_EMOJIS, GOAL_ICONS, WALLET_ICONS, WALLET_COLORS, COLORS } from './store.js';
+import { t, I18N } from './i18n.js';
+import { $, $$, fmt, num, escapeHtml, todayISO, isoOf, fmtDate, monthKey, monthLabel, thisMonth,
+  dayHeaderInfo, catName, catInfo, walletName, walletBalance, goalSaved, debtBalance, debtOutstanding,
+  monthExpense, monthExpenseByCat, applyFilters, toast, show, hide, shake, attachThousands, animateNumber } from './util.js';
+import { datePicker, enhanceSelect, syncCsels, buildThemeGrid, confirmDialog, resolveConfirm } from './widgets.js';
+import { firebaseConfig, initializeApp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  collection, doc, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc, serverTimestamp } from './firebase.js';
+
+let chart, db, auth, currentUser=null;
+let unsubs=[];
+let recurringBusy=false, walletsLoaded=false, recurringLoaded=false;
+
+/* ===== Apply language ===== */
+function applyLang(){
+  document.documentElement.lang=S.lang;
+  paintLangSeg();
+  const al=$('#authLangLink');if(al)al.textContent=t('auth.switchLang');
+  $('#themeBtn').title=t('nav.themeTitle');
+  $('#collapseAll').title=t('list.collapseTitle');
+  $$('[data-i18n]').forEach(el=>{el.textContent=t(el.getAttribute('data-i18n'));});
+  $$('[data-i18n-html]').forEach(el=>{el.innerHTML=t(el.getAttribute('data-i18n-html'));});
+  $$('[data-i18n-ph]').forEach(el=>{el.placeholder=t(el.getAttribute('data-i18n-ph'));});
+  buildRecDayOptions();
+  renderCatFilterOptions();
+  buildThemeGrid();
+  setAuthTexts();
+  renderFormCats();renderRecCats();renderEtCats();
+  updateCollapseAllLabel();
+  renderAll();renderRecurring();renderBudget();renderCategoryManage();renderSavings();renderDebts();
+  syncCsels();
+}
+function setLang(l){S.lang=l;localStorage.setItem('vtm_lang',l);applyLang();}
+
+/* ===== Firebase init ===== */
+function configReady(){return firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('PASTE_');}
+if(!configReady()){hide($('#loadingCard'));show($('#setupCard'));}
+else{
+  const app=initializeApp(firebaseConfig);
+  auth=getAuth(app);
+  // Cache cục bộ (IndexedDB): đọc/ghi tức thì, hoạt động cả khi offline rồi đồng bộ sau.
+  db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+  onAuthStateChanged(auth,user=>{
+    currentUser=user;
+    if(user){
+      hide($('#authCard'));hide($('#loadingCard'));$('#overlay').classList.add('hide');show($('#appRoot'));
+      paintUser(user);subscribeAll(user.uid);
+    }else{
+      unsubs.forEach(u=>u&&u());unsubs=[];recurringBusy=false;walletsLoaded=false;recurringLoaded=false;
+      state.txs=[];state.wallets=[];state.recurring=[];state.goals=[];state.debts=[];state.budget={total:0,perCat:{}};
+      renderAll();hide($('#appRoot'));hide($('#loadingCard'));$('#overlay').classList.remove('hide');show($('#authCard'));
+    }
+  });
+}
+
+function paintUser(u){
+  const name=u.displayName||u.email.split('@')[0];
+  $('#userName').childNodes[0].nodeValue=name;
+  $('#userEmail').textContent=u.email||'';
+  const av=$('#userAv');
+  if(u.photoURL)av.innerHTML=`<img src="${u.photoURL}" alt="">`;
+  else av.textContent=(name[0]||'U').toUpperCase();
+}
+
+/* ===== Firestore subscriptions ===== */
+function col(uid,name){return collection(db,'users',uid,name);}
+function subscribeAll(uid){
+  unsubs.forEach(u=>u&&u());unsubs=[];
+  unsubs.push(onSnapshot(col(uid,'categories'),snap=>{
+    if(!snap.size && !localStorage.getItem('seeded_cats_'+uid)){seedCats(uid);return;}
+    const ex=[],inc=[];
+    snap.docs.forEach(d=>{const data=d.data();const c={docId:d.id,...data,id:data.cid||d.id};(c.type==='income'?inc:ex).push(c);});
+    ex.sort((a,b)=>(a.order||0)-(b.order||0));inc.sort((a,b)=>(a.order||0)-(b.order||0));
+    S.CATS={expense:ex,income:inc};
+    normalizeCatSelections();
+    refreshCatUI();
+  },err=>console.error(err)));
+  unsubs.push(onSnapshot(col(uid,'wallets'),snap=>{
+    state.wallets=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+    if(!snap.size && !localStorage.getItem('seeded_wallets_'+uid)){seedWallets(uid);}
+    walletsLoaded=true;
+    renderAll();maybeRunRecurring();
+  },err=>toast(t('toast.errWallet',{code:err.code}),'danger')));
+
+  unsubs.push(onSnapshot(col(uid,'transactions'),snap=>{
+    state.txs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    state.txs.sort((a,b)=>{
+      if(a.date!==b.date)return (b.date||'').localeCompare(a.date||'');
+      const ta=a.createdAt&&a.createdAt.seconds||0, tb=b.createdAt&&b.createdAt.seconds||0;return tb-ta;
+    });
+    renderAll();
+  },err=>toast(t('toast.errLoad',{code:err.code}),'danger')));
+
+  unsubs.push(onSnapshot(col(uid,'recurring'),snap=>{
+    state.recurring=snap.docs.map(d=>({id:d.id,...d.data()}));
+    recurringLoaded=true;
+    renderRecurring();maybeRunRecurring();
+  }));
+
+  unsubs.push(onSnapshot(col(uid,'goals'),snap=>{
+    state.goals=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+    renderSavings();renderStats();renderList();
+  },err=>console.error(err)));
+
+  unsubs.push(onSnapshot(col(uid,'debts'),snap=>{
+    state.debts=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+    renderDebts();renderStats();renderList();
+  },err=>console.error(err)));
+
+  unsubs.push(onSnapshot(doc(db,'users',uid,'settings','budget'),snap=>{
+    const d=snap.data()||{};state.budget={total:d.total||0,perCat:d.perCat||{}};
+    renderBudget();renderBudgetBanner();
+  }));
+}
+
+async function seedWallets(uid){
+  localStorage.setItem('seeded_wallets_'+uid,'1');
+  const defs=S.lang==='en'
+    ?[{name:'Cash',icon:'💵',initial:0,order:0},{name:'ATM',icon:'🏦',initial:0,order:1},{name:'Credit Card',icon:'💳',initial:0,order:2}]
+    :[{name:'Tiền mặt',icon:'💵',initial:0,order:0},{name:'ATM',icon:'🏦',initial:0,order:1},{name:'Thẻ tín dụng',icon:'💳',initial:0,order:2}];
+  for(const w of defs){try{await addDoc(col(uid,'wallets'),{...w,createdAt:serverTimestamp()});}catch(e){console.error(e);}}
+}
+
+/* ===== Categories: seed defaults + helpers ===== */
+async function seedCats(uid){
+  localStorage.setItem('seeded_cats_'+uid,'1');
+  let order=0;
+  for(const c of DEFAULT_CATS.expense){try{await setDoc(doc(db,'users',uid,'categories','expense_'+c.id),{type:'expense',cid:c.id,vi:c.vi,en:c.en,emo:c.emo,order:order++});}catch(e){console.error(e);}}
+  order=0;
+  for(const c of DEFAULT_CATS.income){try{await setDoc(doc(db,'users',uid,'categories','income_'+c.id),{type:'income',cid:c.id,vi:c.vi,en:c.en,emo:c.emo,order:order++});}catch(e){console.error(e);}}
+}
+function normalizeCatSelections(){
+  const ensure=(type,cur)=>{const list=S.CATS[type]||[];return list.some(c=>c.id===cur)?cur:(list[0]?list[0].id:'');};
+  state.cat=ensure(state.txType,state.cat);
+  state.recCat=ensure(state.recType,state.recCat);
+  etCat=ensure(etType,etCat);
+}
+function refreshCatUI(){
+  renderFormCats();renderRecCats();renderEtCats();
+  renderCatFilterOptions();renderBudget();renderCategoryManage();
+  renderList();renderChart();syncCsels();
+}
+
+/* ===== Recurring auto-run ===== */
+async function maybeRunRecurring(){
+  // Chỉ chạy khi CẢ ví và định kỳ đã tải xong (tránh bật cờ sai khi dữ liệu chưa về đủ).
+  if(recurringBusy||!currentUser||!walletsLoaded||!recurringLoaded||!state.wallets.length)return;
+  recurringBusy=true; // chống chạy chồng; việc chống ghi trùng do trường lastMonth đảm nhiệm
+  try{
+    const ym=thisMonth(); const today=parseInt(todayISO().slice(8,10),10);
+    for(const r of state.recurring){
+      if(!r.active)continue;
+      if((r.lastMonth||'')>=ym)continue;
+      if((r.day||1)>today)continue;
+      const dd=String(Math.min(r.day||1,28)).padStart(2,'0');
+      try{
+        await addDoc(col(currentUser.uid,'transactions'),{
+          type:r.type,cat:r.cat,desc:(r.desc||'')+t('rec.suffix'),amount:r.amount,
+          date:`${ym}-${dd}`,walletId:r.walletId||'',createdAt:serverTimestamp()
+        });
+        await updateDoc(doc(db,'users',currentUser.uid,'recurring',r.id),{lastMonth:ym});
+        toast(t('toast.autoLogged',{desc:escapeHtml(r.desc)}));
+      }catch(e){console.error(e);}
+    }
+  }finally{recurringBusy=false;}
+}
+
+/* ===== Add / delete transaction ===== */
+function addTx(){
+  if(!currentUser)return;
+  const desc=$('#descInput').value.trim();
+  const amount=num($('#amtInput').value);
+  const date=datePicker.get('dateInput')||todayISO();
+  const walletId=$('#walletInput').value||'';
+  if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#amtInput'));return;}
+  const type=state.txType;
+  $('#descInput').value='';$('#amtInput').value='';
+  toast((type==='income'?'📈':'📉')+' '+t('toast.added',{amt:fmt(amount)}));
+  addDoc(col(currentUser.uid,'transactions'),{type,cat:state.cat,desc,amount,date,walletId,createdAt:serverTimestamp()})
+    .then(()=>{if(type==='expense')checkBudgetWarning(date);})
+    .catch(e=>{console.error(e);toast(t('toast.saveFail',{code:e.code}),'danger');});
+}
+async function removeTx(tr){
+  if(!currentUser)return;
+  const label=tr.type==='transfer'?t('tx.transfer'):(tr.desc||catInfo(tr.type,tr.cat).name);
+  const ok=await confirmDialog(t('confirm.deleteTxMsg',{name:label}),{title:t('confirm.deleteTxTitle')});
+  if(!ok)return;
+  try{await deleteDoc(doc(db,'users',currentUser.uid,'transactions',tr.id));toast(t('toast.deletedTx'));}
+  catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+
+function checkBudgetWarning(date){
+  if(!state.budget.total||monthKey(date)!==thisMonth())return;
+  const spent=monthExpense(thisMonth());const limit=state.budget.total;
+  const pct=spent/limit*100;
+  if(spent>limit)toast(t('toast.budgetOver',{spent:fmt(spent),limit:fmt(limit)}),'danger');
+  else if(pct>=80)toast(t('toast.budgetNear',{pct:Math.round(pct)}),'warn');
+}
+
+/* ===== Render: stats ===== */
+function renderStats(){
+  const inc=state.txs.filter(tr=>tr.type==='income').reduce((s,tr)=>s+tr.amount,0);
+  const exp=state.txs.filter(tr=>tr.type==='expense').reduce((s,tr)=>s+tr.amount,0);
+  const walletsTotal=state.wallets.reduce((s,w)=>s+walletBalance(w),0);
+  const goalsTotal=state.goals.reduce((s,g)=>s+goalSaved(g.id),0);
+  const debtsTotal=state.debts.reduce((s,d)=>s+debtBalance(d.id),0); // lend:+receivable, borrow:-payable
+  const bal=walletsTotal+goalsTotal+debtsTotal;
+  animateNumber($('#balanceVal'),bal);
+  animateNumber($('#incomeVal'),inc);
+  animateNumber($('#expenseVal'),exp);
+  $('#balanceSub').textContent=t('stat.walletsN',{n:state.wallets.length})+' • '+(bal>=0?t('stat.stable'):t('stat.negative'));
+  $('#incomeSub').textContent=t('stat.txCount',{n:state.txs.filter(tr=>tr.type==='income').length});
+  $('#expenseSub').textContent=t('stat.txCount',{n:state.txs.filter(tr=>tr.type==='expense').length});
+  const inner=$('#walletBreakInner'), toggle=$('#walletToggle');
+  if(inner){
+    if(!state.wallets.length && !state.goals.length && !state.debts.length){
+      inner.innerHTML=`<div class="hint" style="padding:6px 0">${t('stat.noWallets')}</div>`;
+      if(toggle)toggle.style.display='none';
+    }else{
+      if(toggle)toggle.style.display='';
+      const maxAbs=Math.max(1,...state.wallets.map(w=>Math.abs(walletBalance(w))),...state.goals.map(g=>Math.abs(goalSaved(g.id))),...state.debts.map(d=>Math.abs(debtBalance(d.id))));
+      const row=(emo,name,amt,c)=>`<div class="wb-row">
+          <div class="wb-ic" style="background:${c}22;color:${c}">${emo}</div>
+          <div class="wb-info"><div class="wb-name">${escapeHtml(name)}</div>
+            <div class="wb-bar"><i style="width:${Math.round(Math.abs(amt)/maxAbs*100)}%;background:${c}"></i></div></div>
+          <div class="wb-amt" style="color:${amt>=0?'#fff':'var(--red)'}">${fmt(amt)}</div>
+        </div>`;
+      let html=state.wallets.map(w=>row(w.icon,w.name,walletBalance(w),WALLET_COLORS[w.icon]||'#7c5cff')).join('');
+      html+=state.goals.map(g=>row(g.emo,g.name,goalSaved(g.id),'#7c5cff')).join('');
+      html+=state.debts.map(d=>row(d.dir==='borrow'?'🔻':'🔺',d.name,debtBalance(d.id),'#94a3b8')).join('');
+      inner.innerHTML=html;
+    }
+  }
+}
+
+/* ===== Render: budget banner (dashboard) ===== */
+function renderBudgetBanner(){
+  const b=$('#budgetBanner');
+  if(!state.budget.total){b.style.display='none';return;}
+  b.style.display='block';
+  const spent=monthExpense(thisMonth());const limit=state.budget.total;
+  const pct=Math.min(spent/limit*100,100);const realPct=Math.round(spent/limit*100);
+  $('#bgSpent').textContent=fmt(spent);$('#bgLimit').textContent=fmt(limit);
+  $('#budgetPct').textContent=realPct+'%';
+  const bar=$('#bgBar');bar.className='bg-bar'+(realPct>=100?' over':realPct>=80?' warn':'');
+  $('#budgetPct').style.color=realPct>=100?'var(--red)':realPct>=80?'var(--amber)':'var(--green)';
+  requestAnimationFrame(()=>{$('#bgFill').style.width=pct+'%';});
+}
+
+/* ===== Render: transaction list ===== */
+let collapsedDays=new Set(), collapsedMonths=new Set(), seenDays=new Set();
+function toggleCollapse(set,key,hdr,wrap){
+  if(set.has(key)){set.delete(key);hdr.classList.remove('collapsed');wrap.classList.remove('collapsed');}
+  else{set.add(key);hdr.classList.add('collapsed');wrap.classList.add('collapsed');}
+}
+function renderList(){
+  const list=$('#txList');
+  const txs=applyFilters();
+  if(!txs.length){list.innerHTML=`<div class="empty"><div class="e">🪶</div>${t('list.empty')}<br>${t('list.emptyHint')}</div>`;return;}
+  const months=[],mMap={};
+  txs.forEach(tr=>{
+    const mk=monthKey(tr.date), dk=tr.date||'(no date)';
+    let m=mMap[mk];if(!m){m=mMap[mk]={key:mk,days:[],dMap:{},items:[]};months.push(m);}
+    m.items.push(tr);
+    let d=m.dMap[dk];if(!d){d=m.dMap[dk]={key:dk,items:[]};m.days.push(d);}
+    d.items.push(tr);
+  });
+  list.innerHTML='';let idx=0;
+  months.forEach(m=>{
+    const mNet=m.items.reduce((s,tr)=>s+(tr.type==='income'?tr.amount:tr.type==='expense'?-tr.amount:0),0);
+    const mCol=collapsedMonths.has(m.key);
+    const block=document.createElement('div');block.className='month-block';
+    const mhdr=document.createElement('div');mhdr.className='month-divider'+(mCol?' collapsed':'');
+    mhdr.innerHTML=`<span class="m-caret">▾</span><span class="m-name">${monthLabel(m.key)}</span>`
+      +`<span class="m-cnt">${m.items.length} ${t('count.txShort')}</span>`
+      +`<span class="m-net ${mNet>=0?'in':'out'}">${mNet>=0?'+':'−'}${fmt(Math.abs(mNet))}</span>`;
+    block.appendChild(mhdr);
+    const mbody=document.createElement('div');mbody.className='month-body'+(mCol?' collapsed':'');
+    const mInner=document.createElement('div');mInner.className='mb-inner';mbody.appendChild(mInner);
+    mhdr.onclick=()=>toggleCollapse(collapsedMonths,m.key,mhdr,mbody);
+    m.days.forEach(g=>{
+      const net=g.items.reduce((s,tr)=>s+(tr.type==='income'?tr.amount:tr.type==='expense'?-tr.amount:0),0);
+      const dh=dayHeaderInfo(g.key);
+      // Mặc định: chỉ ngày hôm nay mở, các ngày khác tự thu gọn (chỉ áp dụng lần đầu thấy ngày đó)
+      if(!seenDays.has(g.key)){seenDays.add(g.key);if(g.key!==todayISO())collapsedDays.add(g.key);}
+      const dCol=collapsedDays.has(g.key);
+      const hdr=document.createElement('div');hdr.className='month-hdr'+(dCol?' collapsed':'');
+      hdr.innerHTML=`<div class="mt"><span class="day-caret">▾</span> ${dh.tag?`<span class="rel">${dh.tag}</span>`:'📅'} <span class="wd">${dh.wd}</span> ${dh.dd} <span class="cnt">${g.items.length} ${t('count.txShort')}</span></div>
+        <div class="net ${net>=0?'in':'out'}">${net>=0?'+':'−'}${fmt(Math.abs(net))}</div>`;
+      mInner.appendChild(hdr);
+      const dayWrap=document.createElement('div');dayWrap.className='day-items'+(dCol?' collapsed':'');
+      const inner=document.createElement('div');inner.className='di-inner';dayWrap.appendChild(inner);
+      hdr.onclick=()=>toggleCollapse(collapsedDays,g.key,hdr,dayWrap);
+      g.items.forEach(tr=>{
+        const el=document.createElement('div');el.className='tx';el.style.animationDelay=(idx++*0.02)+'s';
+        let emo,title,sub,amtCls,amtTxt;
+        if(tr.type==='transfer'){
+          emo='🔄';title=escapeHtml(tr.desc)||t('tx.transfer');
+          sub=`${walletName(tr.fromWallet)} → ${walletName(tr.toWallet)}`;
+          amtCls='tr';amtTxt=fmt(tr.amount);
+        }else{
+          const ci=catInfo(tr.type,tr.cat);emo=ci.emo;title=escapeHtml(tr.desc)||ci.name;
+          sub=`${ci.name}`;amtCls=tr.type==='income'?'in':'out';
+          amtTxt=(tr.type==='income'?'+':'−')+fmt(tr.amount);
+        }
+        const wtag=tr.type!=='transfer'&&tr.walletId?`<span class="wtag">${walletName(tr.walletId)}</span>`:'';
+        el.innerHTML=`<div class="emo">${emo}</div>
+          <div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div>
+          <div class="amt ${amtCls}">${amtTxt}</div>
+          <div class="act"><button class="edit" title="${t('tt.edit')}">✎</button><button class="del" title="${t('tt.delete')}">✕</button></div>`;
+        el.querySelector('.edit').onclick=()=>openTxEdit(tr);
+        el.querySelector('.del').onclick=()=>removeTx(tr);
+        inner.appendChild(el);
+      });
+      mInner.appendChild(dayWrap);
+    });
+    block.appendChild(mbody);
+    list.appendChild(block);
+  });
+}
+
+/* ===== Render: chart ===== */
+function renderChart(){
+  const exp=applyFilters().filter(tr=>tr.type==='expense');
+  const totals={};
+  exp.forEach(tr=>{const ci=catInfo('expense',tr.cat);totals[ci.name]=(totals[ci.name]||0)+tr.amount;});
+  const labels=Object.keys(totals),data=Object.values(totals);
+  const total=data.reduce((a,b)=>a+b,0);
+  $('#chartTotal').textContent=fmt(total);
+  const anyFilter=state.filter.q||state.filter.type!=='all'||state.filter.cat!=='all'||state.filter.wallet!=='all'||state.filter.from||state.filter.to;
+  $('#chartScope').textContent=anyFilter?t('chart.byFilter'):t('chart.all');
+  const legend=$('#legend');legend.innerHTML='';
+  labels.forEach((l,i)=>{const pc=total?Math.round(data[i]/total*100):0;
+    const el=document.createElement('div');el.className='leg';
+    el.innerHTML=`<span class="sw" style="background:${COLORS[i%COLORS.length]}"></span><span class="nm">${l}</span><span class="pc">${pc}%</span>`;
+    legend.appendChild(el);});
+  if(!labels.length)legend.innerHTML=`<div style="color:var(--txt-dim);font-size:13px;text-align:center;padding:8px">${t('chart.noData')}</div>`;
+  const cfg={type:'doughnut',data:{labels,datasets:[{data,backgroundColor:COLORS,borderWidth:0,hoverOffset:10,borderRadius:6,spacing:2}]},
+    options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`},backgroundColor:'rgba(20,26,53,.95)',padding:12,cornerRadius:10,titleColor:'#fff',bodyColor:'#cfd6f5'}},animation:{animateScale:true,animateRotate:true,duration:700}}};
+  if(chart){chart.data=cfg.data;chart.update('none');}else chart=new Chart($('#chart'),cfg);
+}
+
+/* ===== Render: wallets ===== */
+function renderWallets(){
+  const grid=$('#walletGrid');grid.innerHTML='';
+  if(!state.wallets.length){grid.innerHTML=`<div class="hint">${t('wallets.empty')}</div>`;}
+  state.wallets.forEach(w=>{
+    const bal=walletBalance(w);const c=WALLET_COLORS[w.icon]||'#7c5cff';
+    const el=document.createElement('div');el.className='glass wallet';
+    el.innerHTML=`<div class="wglow" style="background:${c}"></div>
+      <button class="wedit" title="${t('tt.editWallet')}">✎</button>
+      <button class="wdel" title="${t('tt.deleteWallet')}">✕</button>
+      <div class="wic" style="background:${c}22;color:${c}">${w.icon}</div>
+      <div class="wn">${escapeHtml(w.name)}</div>
+      <div class="wb" style="color:${bal>=0?'#fff':'var(--red)'}">${fmt(bal)}</div>`;
+    el.querySelector('.wedit').onclick=()=>openWalletEdit(w);
+    el.querySelector('.wdel').onclick=()=>removeWallet(w);
+    grid.appendChild(el);
+  });
+  const opts=state.wallets.map(w=>`<option value="${w.id}">${w.icon} ${escapeHtml(w.name)}</option>`).join('');
+  ['#walletInput','#recWallet','#trFrom','#trTo','#etWallet','#etFrom','#etTo','#gmWallet','#debtWallet','#dmWallet'].forEach(sel=>{
+    const e=$(sel);if(!e)return;const cur=e.value;e.innerHTML=opts;
+    if([...e.options].some(o=>o.value===cur))e.value=cur;
+  });
+  if(state.wallets.length>1&&!$('#trTo').value)$('#trTo').selectedIndex=1;
+  const wf=$('#walletFilter');const curWf=wf.value;
+  wf.innerHTML=`<option value="all">${t('filter.allWallets')}</option>`+opts;wf.value=curWf||'all';
+}
+async function removeWallet(w){
+  const ok=await confirmDialog(t('confirm.deleteWalletMsg',{name:w.name}),{title:t('confirm.deleteWalletTitle')});
+  if(!ok)return;
+  try{await deleteDoc(doc(db,'users',currentUser.uid,'wallets',w.id));toast(t('toast.walletDeleted'));}
+  catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+
+/* ----- Edit wallet ----- */
+let editWalletId=null, ewIcon='💵';
+function renderEwIcons(){
+  const wrap=$('#ewIcons');wrap.innerHTML='';
+  WALLET_ICONS.forEach(ic=>{const el=document.createElement('div');el.className='cat'+(ic===ewIcon?' sel':'');
+    el.innerHTML=`<span class="emo">${ic}</span>`;el.onclick=()=>{ewIcon=ic;renderEwIcons();};wrap.appendChild(el);});
+}
+function openWalletEdit(w){
+  editWalletId=w.id;ewIcon=w.icon||'💵';
+  $('#ewName').value=w.name;
+  $('#ewInit').value=w.initial?Number(w.initial).toLocaleString('en-US'):'';
+  renderEwIcons();$('#walletModal').classList.add('show');
+}
+async function saveWalletEdit(){
+  if(!editWalletId)return;
+  const name=$('#ewName').value.trim();const initial=num($('#ewInit').value);
+  if(!name){toast(t('toast.enterWalletName'),'warn');shake($('#ewName'));return;}
+  try{
+    await updateDoc(doc(db,'users',currentUser.uid,'wallets',editWalletId),{name,icon:ewIcon,initial});
+    $('#walletModal').classList.remove('show');toast(t('toast.walletUpdated'));
+  }catch(e){console.error(e);toast(t('toast.updateFail'),'danger');}
+}
+
+/* ----- Edit transaction ----- */
+let editTxId=null, etType='expense', etCat='food';
+function renderEtCats(){buildCats('#etCats',etType,etCat,id=>{etCat=id;renderEtCats();});}
+function openTxEdit(tr){
+  editTxId=tr.id;
+  const isTr=tr.type==='transfer';
+  $('#etNormal').style.display=isTr?'none':'';
+  $('#etTransfer').style.display=isTr?'':'none';
+  $('#etWalletField').style.display=isTr?'none':'';
+  $('#etDesc').value=tr.desc||'';
+  $('#etAmt').value=tr.amount?Number(tr.amount).toLocaleString('en-US'):'';
+  datePicker.set('etDate',tr.date||todayISO());
+  if(isTr){
+    $('#etFrom').value=tr.fromWallet||'';$('#etTo').value=tr.toWallet||'';
+  }else{
+    etType=(tr.type==='income')?'income':'expense';
+    etCat=tr.cat||(S.CATS[etType][0]||{}).id||'';
+    $('#etSeg').classList.toggle('exp',etType==='income');
+    $('#etSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===etType));
+    renderEtCats();
+    $('#etWallet').value=tr.walletId||'';
+  }
+  syncCsels();
+  $('#editTxModal').classList.add('show');
+}
+async function saveTxEdit(){
+  if(!editTxId||!currentUser)return;
+  const amount=num($('#etAmt').value);
+  if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#etAmt'));return;}
+  const date=datePicker.get('etDate')||todayISO();
+  const desc=$('#etDesc').value.trim();
+  const isTr=$('#etTransfer').style.display!=='none';
+  let data;
+  if(isTr){
+    const from=$('#etFrom').value,to=$('#etTo').value;
+    if(!from||!to||from===to){toast(t('toast.pickTwoWallets'),'warn');return;}
+    data={amount,date,desc,fromWallet:from,toWallet:to};
+  }else{
+    data={type:etType,cat:etCat,amount,date,desc,walletId:$('#etWallet').value||''};
+  }
+  try{
+    await updateDoc(doc(db,'users',currentUser.uid,'transactions',editTxId),data);
+    $('#editTxModal').classList.remove('show');toast(t('toast.txUpdated'));
+    if(!isTr&&etType==='expense')checkBudgetWarning(date);
+  }catch(e){console.error(e);toast(t('toast.updateFail'),'danger');}
+}
+
+async function addWallet(){
+  const name=$('#wName').value.trim();const initial=num($('#wInit').value);
+  if(!name){toast(t('toast.enterWalletName'),'warn');shake($('#wName'));return;}
+  try{
+    await addDoc(col(currentUser.uid,'wallets'),{name,icon:state.wIcon,initial,order:state.wallets.length,createdAt:serverTimestamp()});
+    $('#wName').value='';$('#wInit').value='';toast(t('toast.walletCreated',{name}));
+  }catch(e){console.error(e);toast(t('toast.walletCreateFail'),'danger');}
+}
+
+/* ===== Transfer ===== */
+async function doTransfer(){
+  const from=$('#trFrom').value,to=$('#trTo').value;
+  const amount=num($('#trAmt').value);const date=datePicker.get('trDate')||todayISO();
+  const desc=$('#trDesc').value.trim();
+  if(from===to){toast(t('toast.pickTwoWallets'),'warn');return;}
+  if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#trAmt'));return;}
+  try{
+    await addDoc(col(currentUser.uid,'transactions'),{type:'transfer',amount,fromWallet:from,toWallet:to,desc,date,createdAt:serverTimestamp()});
+    closeTransfer();toast(t('toast.transferred',{amt:fmt(amount)}));
+  }catch(e){console.error(e);toast(t('toast.transferFail'),'danger');}
+}
+function openTransfer(){if(state.wallets.length<2){toast(t('toast.need2Wallets'),'warn');return;}$('#trAmt').value='';$('#trDesc').value='';datePicker.set('trDate',todayISO());$('#transferModal').classList.add('show');}
+function closeTransfer(){$('#transferModal').classList.remove('show');}
+
+/* ===== Recurring ===== */
+function renderRecurring(){
+  const list=$('#recurringList');list.innerHTML='';
+  if(!state.recurring.length){list.innerHTML=`<div class="hint">${t('rec.empty')}</div>`;return;}
+  state.recurring.slice().sort((a,b)=>(a.day||1)-(b.day||1)).forEach(r=>{
+    const ci=catInfo(r.type,r.cat);
+    const el=document.createElement('div');el.className='item-row';
+    const meta=`${ci.name} • ${t('rec.monthlyOn',{d:r.day||1})} • ${walletName(r.walletId)}${r.lastMonth?' • '+t('rec.lastRun',{m:monthLabel(r.lastMonth)}):''}`;
+    el.innerHTML=`<div class="emo">${ci.emo}</div>
+      <div class="info"><div class="t">${escapeHtml(r.desc)||ci.name}</div><div class="d">${meta}</div></div>
+      <div class="amt ${r.type==='income'?'in':'out'}">${r.type==='income'?'+':'−'}${fmt(r.amount)}</div>
+      <div class="ctl"><div class="switch ${r.active?'on':''}" title="${t('tt.toggle')}"></div><button class="del">🗑</button></div>`;
+    el.querySelector('.switch').onclick=()=>toggleRecurring(r);
+    el.querySelector('.del').onclick=()=>removeRecurring(r);
+    list.appendChild(el);
+  });
+}
+async function addRecurring(){
+  const desc=$('#recDesc').value.trim();const amount=num($('#recAmt').value);
+  const day=parseInt($('#recDay').value,10)||1;const walletId=$('#recWallet').value||'';
+  if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#recAmt'));return;}
+  try{
+    await addDoc(col(currentUser.uid,'recurring'),{type:state.recType,cat:state.recCat,desc,amount,day,walletId,active:true,lastMonth:'',createdAt:serverTimestamp()});
+    $('#recDesc').value='';$('#recAmt').value='';toast(t('toast.recCreated'));
+  }catch(e){console.error(e);toast(t('toast.recCreateFail'),'danger');}
+}
+async function toggleRecurring(r){try{await updateDoc(doc(db,'users',currentUser.uid,'recurring',r.id),{active:!r.active});}catch(e){console.error(e);}}
+async function removeRecurring(r){const ok=await confirmDialog(t('confirm.deleteRecMsg'),{title:t('confirm.deleteRecTitle')});if(!ok)return;try{await deleteDoc(doc(db,'users',currentUser.uid,'recurring',r.id));toast(t('toast.deleted'));}catch(e){console.error(e);}}
+
+/* ===== Budget tab ===== */
+function renderBudget(){
+  if(document.activeElement!==$('#budgetTotal'))$('#budgetTotal').value=state.budget.total?Number(state.budget.total).toLocaleString('en-US'):'';
+  const wrap=$('#catBudgetList');if(!wrap)return;wrap.innerHTML='';
+  S.CATS.expense.forEach(c=>{
+    const lim=state.budget.perCat[c.id]||0;const spent=monthExpenseByCat(thisMonth(),c.id);
+    const pct=lim?Math.min(spent/lim*100,100):0;const realPct=lim?Math.round(spent/lim*100):0;
+    const cls=realPct>=100?'over':realPct>=80?'warn':'';
+    const note=lim?t('budget.spentOfLimit',{spent:fmt(spent),limit:fmt(lim)}):t('budget.spentOf',{spent:fmt(spent)});
+    const row=document.createElement('div');row.className='budget-cat-row';
+    row.innerHTML=`<div style="flex:1">
+        <div class="nm">${c.emo} ${catName(c)} <span style="color:var(--txt-dim);font-weight:500;font-size:12px">${note}</span></div>
+        <div class="mini-bar"><div class="f ${cls}" style="width:${pct}%"></div></div>
+      </div>
+      <input type="text" inputmode="numeric" data-cat="${c.id}" placeholder="∞" value="${lim?Number(lim).toLocaleString('en-US'):''}" />`;
+    const inp=row.querySelector('input');attachThousands(inp);
+    inp.addEventListener('change',()=>saveCatBudget(c.id,num(inp.value)));
+    wrap.appendChild(row);
+  });
+}
+async function saveBudgetTotal(){
+  const total=num($('#budgetTotal').value);
+  try{await setDoc(doc(db,'users',currentUser.uid,'settings','budget'),{total},{merge:true});toast(t('toast.budgetSaved'));}
+  catch(e){console.error(e);toast(t('toast.budgetSaveFail'),'danger');}
+}
+async function saveCatBudget(catId,val){
+  try{await setDoc(doc(db,'users',currentUser.uid,'settings','budget'),{perCat:{[catId]:val}},{merge:true});toast(t('toast.catBudgetSaved'));}
+  catch(e){console.error(e);}
+}
+
+/* ===== Category UI builders ===== */
+function buildCats(wrapSel,type,selId,onPick){
+  const wrap=$(wrapSel);if(!wrap)return;wrap.innerHTML='';
+  S.CATS[type].forEach((c,i)=>{
+    const el=document.createElement('div');el.className='cat'+(c.id===selId?' sel':'');
+    el.innerHTML=`<span class="emo">${c.emo}</span>${catName(c)}`;
+    el.onclick=()=>onPick(c.id);el.style.animation=`pop .3s ${i*0.03}s both`;
+    wrap.appendChild(el);
+  });
+}
+function renderFormCats(){buildCats('#cats',state.txType,state.cat,id=>{state.cat=id;renderFormCats();});}
+function renderRecCats(){buildCats('#recCats',state.recType,state.recCat,id=>{state.recCat=id;renderRecCats();});}
+function renderWalletIcons(){
+  const wrap=$('#wIcons');wrap.innerHTML='';
+  WALLET_ICONS.forEach(ic=>{
+    const el=document.createElement('div');el.className='cat'+(ic===state.wIcon?' sel':'');
+    el.innerHTML=`<span class="emo">${ic}</span>`;
+    el.onclick=()=>{state.wIcon=ic;renderWalletIcons();};
+    wrap.appendChild(el);
+  });
+}
+function renderCatFilterOptions(){
+  const sel=$('#catFilter');const cur=sel.value;
+  const all=[...new Map([...S.CATS.expense,...S.CATS.income].map(c=>[c.id,c])).values()];
+  sel.innerHTML=`<option value="all">${t('filter.allCats')}</option>`+all.map(c=>`<option value="${c.id}">${c.emo} ${catName(c)}</option>`).join('');
+  sel.value=cur||'all';
+}
+
+/* ===== Category management (add/edit/delete) ===== */
+let catModalType='expense', catEditDocId=null, catEmoji='🍜';
+function renderCatEmojis(){
+  const wrap=$('#catEmojis');if(!wrap)return;wrap.innerHTML='';
+  CAT_EMOJIS.forEach(ic=>{const el=document.createElement('div');el.className='cat'+(ic===catEmoji?' sel':'');
+    el.innerHTML=`<span class="emo">${ic}</span>`;el.onclick=()=>{catEmoji=ic;renderCatEmojis();};wrap.appendChild(el);});
+}
+function setCatModalType(type){
+  catModalType=type;
+  $('#catSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===type));
+  $('#catSeg').classList.toggle('exp',type==='income');
+}
+function openCatAdd(type){
+  catEditDocId=null;catEmoji=CAT_EMOJIS[0];
+  $('#catModalTitle').textContent=t('cats.addTitle');
+  $('#catNameInput').value='';$('#catSeg').style.display='';
+  setCatModalType(type);renderCatEmojis();
+  $('#catModal').classList.add('show');
+  setTimeout(()=>$('#catNameInput').focus(),50);
+}
+function openCatEdit(c){
+  catEditDocId=c.docId;catEmoji=c.emo||CAT_EMOJIS[0];
+  $('#catModalTitle').textContent=t('cats.editTitle');
+  $('#catNameInput').value=catName(c);$('#catSeg').style.display='none';
+  setCatModalType(c.type);renderCatEmojis();
+  $('#catModal').classList.add('show');
+}
+async function saveCat(){
+  if(!currentUser)return;
+  const name=$('#catNameInput').value.trim();
+  if(!name){toast(t('cats.enterName'),'warn');shake($('#catNameInput'));return;}
+  try{
+    if(catEditDocId){
+      await updateDoc(doc(db,'users',currentUser.uid,'categories',catEditDocId),{name,vi:name,en:name,emo:catEmoji});
+      toast(t('toast.catUpdated'));
+    }else{
+      const cid='c'+Date.now().toString(36)+Math.floor(Math.random()*1000);
+      const order=(S.CATS[catModalType]||[]).length;
+      await addDoc(col(currentUser.uid,'categories'),{type:catModalType,cid,name,emo:catEmoji,order,createdAt:serverTimestamp()});
+      toast(t('toast.catCreated'));
+    }
+    $('#catModal').classList.remove('show');
+  }catch(e){console.error(e);toast(t('toast.catSaveFail'),'danger');}
+}
+async function deleteCat(c){
+  const ok=await confirmDialog(t('confirm.deleteCatMsg',{name:catName(c)}),{title:t('confirm.deleteCatTitle')});
+  if(!ok)return;
+  try{await deleteDoc(doc(db,'users',currentUser.uid,'categories',c.docId));toast(t('toast.catDeleted'));}
+  catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+function renderCategoryManage(){
+  ['expense','income'].forEach(type=>{
+    const wrap=$(type==='expense'?'#expenseCatList':'#incomeCatList');if(!wrap)return;
+    const list=S.CATS[type]||[];
+    if(!list.length){wrap.innerHTML=`<div class="hint">${t('cats.empty')}</div>`;return;}
+    wrap.innerHTML='';
+    list.forEach(c=>{
+      const el=document.createElement('div');el.className='item-row';
+      el.innerHTML=`<div class="emo">${c.emo}</div>
+        <div class="info"><div class="t">${escapeHtml(catName(c))}</div></div>
+        <div class="ctl"><button class="edit">✎</button><button class="del">🗑</button></div>`;
+      el.querySelector('.edit').onclick=()=>openCatEdit(c);
+      el.querySelector('.del').onclick=()=>deleteCat(c);
+      wrap.appendChild(el);
+    });
+  });
+}
+function buildRecDayOptions(){
+  const sel=$('#recDay');const cur=sel.value;sel.innerHTML='';
+  for(let d=1;d<=28;d++){const o=document.createElement('option');o.value=d;o.textContent=t('rec.dayLabel',{d});sel.appendChild(o);}
+  if(cur)sel.value=cur;
+}
+function updateCollapseAllLabel(){
+  const keys=[...new Set(applyFilters().map(tr=>monthKey(tr.date)))];
+  const allCollapsed=keys.length&&keys.every(k=>collapsedMonths.has(k));
+  $('#collapseAll').innerHTML=allCollapsed?t('list.expand'):t('list.collapse');
+}
+
+/* ===== Savings goals ===== */
+let goalEditId=null, goalEmoji='🐷';
+function renderGoalEmojis(){
+  const wrap=$('#goalEmojis');if(!wrap)return;wrap.innerHTML='';
+  GOAL_ICONS.forEach(ic=>{const el=document.createElement('div');el.className='cat'+(ic===goalEmoji?' sel':'');
+    el.innerHTML=`<span class="emo">${ic}</span>`;el.onclick=()=>{goalEmoji=ic;renderGoalEmojis();};wrap.appendChild(el);});
+}
+function renderSavings(){
+  const grid=$('#goalGrid');if(!grid)return;grid.innerHTML='';
+  if(!state.goals.length){grid.innerHTML=`<div class="hint">${t('savings.empty')}</div>`;return;}
+  state.goals.forEach(g=>{
+    const saved=goalSaved(g.id), target=g.target||0;
+    const pct=target?Math.min(saved/target*100,100):0, realPct=target?Math.round(saved/target*100):0;
+    const done=target&&saved>=target;
+    const el=document.createElement('div');el.className='glass goal'+(done?' done':'');
+    el.innerHTML=`<div class="goal-top">
+        <div class="goal-ic">${g.emo}</div>
+        <div class="goal-meta"><div class="goal-name">${escapeHtml(g.name)}${done?' ✅':''}</div>
+          <div class="goal-sub">${fmt(saved)} / ${fmt(target)}</div></div>
+        <div class="goal-actions"><button class="gedit" title="${t('tt.edit')}">✎</button><button class="gdel" title="${t('tt.delete')}">🗑</button></div>
+      </div>
+      <div class="goal-bar"><i style="width:${pct}%"></i></div>
+      <div class="goal-foot"><span class="goal-pct">${realPct}%</span>
+        <div class="goal-btns"><button class="gwd">− ${t('savings.withdraw')}</button><button class="gdep btn-grad" style="box-shadow:none">＋ ${t('savings.deposit')}</button></div></div>`;
+    el.querySelector('.gedit').onclick=()=>openGoalEdit(g);
+    el.querySelector('.gdel').onclick=()=>deleteGoal(g);
+    el.querySelector('.gdep').onclick=()=>openGoalMove(g,'deposit');
+    el.querySelector('.gwd').onclick=()=>openGoalMove(g,'withdraw');
+    grid.appendChild(el);
+  });
+}
+function openGoalAdd(){
+  goalEditId=null;goalEmoji=GOAL_ICONS[0];
+  $('#goalModalTitle').textContent=t('savings.addTitle');
+  $('#goalName').value='';$('#goalTarget').value='';renderGoalEmojis();
+  $('#goalModal').classList.add('show');setTimeout(()=>$('#goalName').focus(),50);
+}
+function openGoalEdit(g){
+  goalEditId=g.id;goalEmoji=g.emo||GOAL_ICONS[0];
+  $('#goalModalTitle').textContent=t('savings.editTitle');
+  $('#goalName').value=g.name;$('#goalTarget').value=g.target?Number(g.target).toLocaleString('en-US'):'';
+  renderGoalEmojis();$('#goalModal').classList.add('show');
+}
+async function saveGoal(){
+  if(!currentUser)return;
+  const name=$('#goalName').value.trim();const target=num($('#goalTarget').value);
+  if(!name){toast(t('savings.enterName'),'warn');shake($('#goalName'));return;}
+  if(target<=0){toast(t('savings.enterTarget'),'warn');shake($('#goalTarget'));return;}
+  try{
+    if(goalEditId)await updateDoc(doc(db,'users',currentUser.uid,'goals',goalEditId),{name,target,emo:goalEmoji});
+    else await addDoc(col(currentUser.uid,'goals'),{name,target,emo:goalEmoji,order:state.goals.length,createdAt:serverTimestamp()});
+    $('#goalModal').classList.remove('show');toast(goalEditId?t('toast.goalUpdated'):t('toast.goalCreated'));
+  }catch(e){console.error(e);toast(t('toast.catSaveFail'),'danger');}
+}
+async function deleteGoal(g){
+  const saved=goalSaved(g.id), firstW=state.wallets[0];
+  const msg=(saved>0&&firstW)
+    ?t('confirm.deleteGoalMoneyMsg',{name:g.name,amt:fmt(saved),wallet:firstW.icon+' '+firstW.name})
+    :t('confirm.deleteGoalMsg',{name:g.name});
+  const ok=await confirmDialog(msg,{title:t('confirm.deleteGoalTitle')});
+  if(!ok)return;
+  try{
+    if(saved>0&&firstW){
+      await addDoc(col(currentUser.uid,'transactions'),{type:'transfer',amount:saved,fromWallet:'g:'+g.id,toWallet:firstW.id,desc:t('savings.closeDesc',{name:g.name}),date:todayISO(),createdAt:serverTimestamp()});
+    }
+    await deleteDoc(doc(db,'users',currentUser.uid,'goals',g.id));toast(t('toast.goalDeleted'));
+  }catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+let gmGoalId=null, gmMode='deposit';
+function openGoalMove(g,mode){
+  if(!state.wallets.length){toast(t('toast.need1Wallet'),'warn');return;}
+  gmGoalId=g.id;gmMode=mode;
+  $('#goalMoveTitle').textContent=(mode==='deposit'?t('savings.depositTitle'):t('savings.withdrawTitle'))+' · '+g.emo+' '+g.name;
+  $('#goalMoveWalletLabel').textContent=mode==='deposit'?t('savings.fromWallet'):t('savings.toWallet');
+  $('#gmAmt').value='';datePicker.set('gmDate',todayISO());
+  $('#goalMoveModal').classList.add('show');syncCsels();
+}
+async function doGoalMove(){
+  if(!currentUser||!gmGoalId)return;
+  const wallet=$('#gmWallet').value;const amount=num($('#gmAmt').value);const date=datePicker.get('gmDate')||todayISO();
+  const g=state.goals.find(x=>x.id===gmGoalId);if(!g)return;
+  if(!wallet){toast(t('toast.pickWallet'),'warn');return;}
+  if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#gmAmt'));return;}
+  const gref='g:'+gmGoalId;let data;
+  if(gmMode==='deposit'){
+    data={type:'transfer',amount,fromWallet:wallet,toWallet:gref,desc:t('savings.depositDesc',{name:g.name}),date,createdAt:serverTimestamp()};
+  }else{
+    if(amount>goalSaved(gmGoalId)){toast(t('toast.exceedSaved'),'warn');shake($('#gmAmt'));return;}
+    data={type:'transfer',amount,fromWallet:gref,toWallet:wallet,desc:t('savings.withdrawDesc',{name:g.name}),date,createdAt:serverTimestamp()};
+  }
+  try{await addDoc(col(currentUser.uid,'transactions'),data);$('#goalMoveModal').classList.remove('show');
+    toast(gmMode==='deposit'?t('toast.deposited',{amt:fmt(amount)}):t('toast.withdrawn',{amt:fmt(amount)}));
+  }catch(e){console.error(e);toast(t('toast.transferFail'),'danger');}
+}
+
+/* ===== Debts & Loans ===== */
+function renderDebts(){
+  [['borrow','#payableList'],['lend','#receivableList']].forEach(([dir,sel])=>{
+    const wrap=$(sel);if(!wrap)return;
+    const list=state.debts.filter(d=>d.dir===dir);
+    if(!list.length){wrap.innerHTML=`<div class="hint">${t('debts.empty')}</div>`;return;}
+    wrap.innerHTML='';
+    list.forEach(d=>{
+      const out=debtOutstanding(d);const settled=out<=0.5;
+      const label=dir==='borrow'?t('debts.youOwe'):t('debts.owedYou');
+      const actLabel=dir==='borrow'?t('debts.repay'):t('debts.collect');
+      const tag=dir==='borrow'?t('debts.payable'):t('debts.receivable');
+      const el=document.createElement('div');el.className='glass goal'+(settled?' done':'');
+      el.innerHTML=`<div class="goal-top">
+          <div class="goal-ic">${dir==='borrow'?'🔻':'🔺'}</div>
+          <div class="goal-meta"><div class="goal-name">${escapeHtml(d.name)}${settled?' ✅':''}</div>
+            <div class="goal-sub">${settled?t('debts.settled'):label+': '+fmt(out)}${d.note?' • '+escapeHtml(d.note):''}</div></div>
+          <div class="goal-actions"><button class="gedit" title="${t('tt.edit')}">✎</button><button class="gdel" title="${t('tt.delete')}">🗑</button></div>
+        </div>
+        <div class="goal-foot"><span class="goal-pct" style="font-size:12.5px;color:var(--txt-dim);font-weight:600">${tag}</span>
+          <div class="goal-btns">${settled?'':`<button class="gdep btn-grad" style="box-shadow:none">${actLabel}</button>`}</div></div>`;
+      el.querySelector('.gedit').onclick=()=>openDebtEdit(d);
+      el.querySelector('.gdel').onclick=()=>deleteDebt(d);
+      const act=el.querySelector('.gdep');if(act)act.onclick=()=>openDebtMove(d);
+      wrap.appendChild(el);
+    });
+  });
+}
+let debtEditId=null, debtDir='borrow';
+function setDebtDir(dir){
+  debtDir=dir;
+  $('#debtSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.dir===dir));
+  $('#debtSeg').classList.toggle('exp',dir==='lend');
+  $('#debtWalletLabel').textContent=dir==='borrow'?t('debts.intoWallet'):t('debts.outWallet');
+}
+function openDebtAdd(dir){
+  debtEditId=null;
+  $('#debtModalTitle').textContent=t('debts.addTitle');
+  $('#debtSeg').style.display='';$('#debtInitFields').style.display='';
+  $('#debtName').value='';$('#debtAmt').value='';$('#debtNote').value='';datePicker.set('debtDate',todayISO());
+  setDebtDir(dir);syncCsels();
+  $('#debtModal').classList.add('show');setTimeout(()=>$('#debtName').focus(),50);
+}
+function openDebtEdit(d){
+  debtEditId=d.id;debtDir=d.dir;
+  $('#debtModalTitle').textContent=t('debts.editTitle');
+  $('#debtSeg').style.display='none';$('#debtInitFields').style.display='none';
+  $('#debtName').value=d.name;$('#debtNote').value=d.note||'';
+  $('#debtModal').classList.add('show');
+}
+async function saveDebt(){
+  if(!currentUser)return;
+  const name=$('#debtName').value.trim();const note=$('#debtNote').value.trim();
+  if(!name){toast(t('debts.enterName'),'warn');shake($('#debtName'));return;}
+  try{
+    if(debtEditId){
+      await updateDoc(doc(db,'users',currentUser.uid,'debts',debtEditId),{name,note});
+      toast(t('toast.debtUpdated'));
+    }else{
+      const amount=num($('#debtAmt').value);const wallet=$('#debtWallet').value;const date=datePicker.get('debtDate')||todayISO();
+      if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#debtAmt'));return;}
+      if(!wallet){toast(t('toast.pickWallet'),'warn');return;}
+      const ref=await addDoc(col(currentUser.uid,'debts'),{dir:debtDir,name,note,order:state.debts.length,createdAt:serverTimestamp()});
+      const dref='d:'+ref.id;
+      const data=debtDir==='borrow'
+        ?{type:'transfer',amount,fromWallet:dref,toWallet:wallet,desc:t('debts.borrowDesc',{name}),date,createdAt:serverTimestamp()}
+        :{type:'transfer',amount,fromWallet:wallet,toWallet:dref,desc:t('debts.lendDesc',{name}),date,createdAt:serverTimestamp()};
+      await addDoc(col(currentUser.uid,'transactions'),data);
+      toast(t('toast.debtCreated'));
+    }
+    $('#debtModal').classList.remove('show');
+  }catch(e){console.error(e);toast(t('toast.catSaveFail'),'danger');}
+}
+async function deleteDebt(d){
+  const out=debtOutstanding(d), firstW=state.wallets[0];
+  let msg=t('confirm.deleteDebtMsg',{name:d.name});
+  if(out>0.5&&firstW){
+    msg=d.dir==='borrow'
+      ?t('confirm.deleteDebtPayMsg',{name:d.name,amt:fmt(out),wallet:firstW.icon+' '+firstW.name})
+      :t('confirm.deleteDebtCollectMsg',{name:d.name,amt:fmt(out),wallet:firstW.icon+' '+firstW.name});
+  }
+  const ok=await confirmDialog(msg,{title:t('confirm.deleteDebtTitle')});
+  if(!ok)return;
+  try{
+    if(out>0.5&&firstW){
+      const dref='d:'+d.id;
+      const data=d.dir==='borrow'
+        ?{type:'transfer',amount:out,fromWallet:firstW.id,toWallet:dref,desc:t('debts.settleDesc',{name:d.name}),date:todayISO(),createdAt:serverTimestamp()}
+        :{type:'transfer',amount:out,fromWallet:dref,toWallet:firstW.id,desc:t('debts.settleDesc',{name:d.name}),date:todayISO(),createdAt:serverTimestamp()};
+      await addDoc(col(currentUser.uid,'transactions'),data);
+    }
+    await deleteDoc(doc(db,'users',currentUser.uid,'debts',d.id));toast(t('toast.debtDeleted'));
+  }catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+let dmDebtId=null;
+function openDebtMove(d){
+  if(!state.wallets.length){toast(t('toast.need1Wallet'),'warn');return;}
+  dmDebtId=d.id;const out=debtOutstanding(d);
+  $('#debtMoveTitle').textContent=(d.dir==='borrow'?t('debts.repay'):t('debts.collect'))+' · '+d.name;
+  $('#debtMoveWalletLabel').textContent=d.dir==='borrow'?t('debts.fromWallet'):t('debts.intoWallet');
+  $('#dmAmt').value=out?Number(Math.round(out)).toLocaleString('en-US'):'';datePicker.set('dmDate',todayISO());
+  $('#debtMoveModal').classList.add('show');syncCsels();
+}
+async function doDebtMove(){
+  if(!currentUser||!dmDebtId)return;
+  const d=state.debts.find(x=>x.id===dmDebtId);if(!d)return;
+  const wallet=$('#dmWallet').value;const amount=num($('#dmAmt').value);const date=datePicker.get('dmDate')||todayISO();
+  if(!wallet){toast(t('toast.pickWallet'),'warn');return;}
+  if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#dmAmt'));return;}
+  if(amount>debtOutstanding(d)+0.5){toast(t('toast.exceedDebt'),'warn');shake($('#dmAmt'));return;}
+  const dref='d:'+dmDebtId;
+  const data=d.dir==='borrow'
+    ?{type:'transfer',amount,fromWallet:wallet,toWallet:dref,desc:t('debts.repayDesc',{name:d.name}),date,createdAt:serverTimestamp()}
+    :{type:'transfer',amount,fromWallet:dref,toWallet:wallet,desc:t('debts.collectDesc',{name:d.name}),date,createdAt:serverTimestamp()};
+  try{await addDoc(col(currentUser.uid,'transactions'),data);$('#debtMoveModal').classList.remove('show');
+    toast(d.dir==='borrow'?t('toast.repaid',{amt:fmt(amount)}):t('toast.collected',{amt:fmt(amount)}));
+  }catch(e){console.error(e);toast(t('toast.transferFail'),'danger');}
+}
+
+function renderAll(){renderStats();renderWallets();renderList();renderChart();renderBudgetBanner();syncCsels();}
+
+/* ===== CSV export ===== */
+function exportCSV(){
+  const txs=applyFilters();
+  if(!txs.length){toast(t('toast.noExportData'),'warn');return;}
+  const head=[t('csv.date'),t('csv.type'),t('csv.cat'),t('csv.desc'),t('csv.wallet'),t('csv.amount')];
+  const typeLabel={income:t('chip.income'),expense:t('chip.expense'),transfer:t('chip.transfer')};
+  const rows=txs.map(tr=>{
+    let cat='',wallet='';
+    if(tr.type==='transfer'){cat=t('tx.transfer');wallet=`${walletName(tr.fromWallet)} → ${walletName(tr.toWallet)}`;}
+    else{cat=catInfo(tr.type,tr.cat).name;wallet=walletName(tr.walletId);}
+    const amt=(tr.type==='expense'?'-':tr.type==='income'?'+':'')+tr.amount;
+    return [tr.date,typeLabel[tr.type]||tr.type,cat,(tr.desc||''),wallet,amt];
+  });
+  const esc=v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const csv=[head,...rows].map(r=>r.map(esc).join(',')).join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=`vi-thong-minh_${todayISO()}.csv`;a.click();
+  URL.revokeObjectURL(url);toast(t('toast.exported',{n:txs.length}));
+}
+
+/* ===================== UI WIRING ===================== */
+$('#dateInput').dataset.iso=todayISO();$('#trDate').dataset.iso=todayISO();
+function placeWalletPop(){
+  const btn=$('#walletToggle'),pop=$('#walletBreakdown');if(!pop.classList.contains('open'))return;
+  const r=btn.getBoundingClientRect(),w=300,vw=document.documentElement.clientWidth;
+  let left=r.left;if(left+w>vw-10)left=vw-w-10;if(left<10)left=10;
+  pop.style.left=left+'px';pop.style.top=(r.bottom+8)+'px';
+}
+function closeWalletPop(){$('#walletToggle').classList.remove('open');$('#walletBreakdown').classList.remove('open');}
+$('#walletToggle').onclick=e=>{
+  e.stopPropagation();
+  const open=$('#walletToggle').classList.toggle('open');
+  $('#walletBreakdown').classList.toggle('open',open);
+  if(open)placeWalletPop();
+};
+document.addEventListener('click',e=>{const pop=$('#walletBreakdown');if(pop.classList.contains('open')&&!pop.contains(e.target)&&e.target!==$('#walletToggle'))closeWalletPop();});
+window.addEventListener('resize',closeWalletPop);
+window.addEventListener('scroll',()=>{if($('#walletBreakdown').classList.contains('open'))placeWalletPop();},true);
+
+// Theme picker
+function placeThemePop(){
+  const btn=$('#themeBtn'),pop=$('#themePop');if(!pop.classList.contains('open'))return;
+  const r=btn.getBoundingClientRect(),w=248,vw=document.documentElement.clientWidth;
+  let left=r.right-w;if(left+w>vw-10)left=vw-w-10;if(left<10)left=10;
+  pop.style.left=left+'px';pop.style.top=(r.bottom+8)+'px';
+}
+function closeThemePop(){$('#themePop').classList.remove('open');}
+$('#themeBtn').onclick=e=>{e.stopPropagation();const open=$('#themePop').classList.toggle('open');if(open){buildThemeGrid();placeThemePop();}};
+document.addEventListener('click',e=>{const p=$('#themePop'),b=$('#themeBtn');if(p.classList.contains('open')&&!p.contains(e.target)&&!b.contains(e.target))closeThemePop();});
+window.addEventListener('resize',closeThemePop);
+window.addEventListener('scroll',()=>{if($('#themePop').classList.contains('open'))placeThemePop();},true);
+buildThemeGrid();
+buildRecDayOptions();
+attachThousands($('#amtInput'));attachThousands($('#wInit'));attachThousands($('#recAmt'));attachThousands($('#trAmt'));attachThousands($('#budgetTotal'));
+renderFormCats();renderRecCats();renderWalletIcons();renderCatFilterOptions();
+document.querySelectorAll('.field select').forEach(enhanceSelect);syncCsels();
+
+// Language
+function paintLangSeg(){$$('#langSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lang===S.lang));}
+$$('#langSeg button').forEach(b=>b.onclick=()=>{if(b.dataset.lang!==S.lang)setLang(b.dataset.lang);});
+$('#authLangLink').onclick=()=>setLang(S.lang==='vi'?'en':'vi');
+
+// Tabs
+function activateTab(name){
+  const btn=$(`#tabs button[data-tab="${name}"]`);
+  if(!btn)name='dash';
+  state.tab=name;
+  localStorage.setItem('vtm_tab',name);
+  $$('#tabs button').forEach(x=>x.classList.toggle('on',x.dataset.tab===name));
+  $$('.tab-page').forEach(p=>p.classList.remove('on'));$('#page-'+name).classList.add('on');
+  if(name==='budget')renderBudget();
+  if(name==='cats')renderCategoryManage();
+  if(name==='savings')renderSavings();
+  if(name==='debts')renderDebts();
+  if(name==='charts'){renderChart();if(chart)requestAnimationFrame(()=>chart.resize());}
+}
+$$('#tabs button').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
+activateTab(localStorage.getItem('vtm_tab')||'dash');
+
+// Sidebar collapse (desktop)
+$('#appRoot').classList.toggle('collapsed',localStorage.getItem('vtm_sidebar')==='collapsed');
+$('#sidebarToggle').onclick=()=>{
+  const c=$('#appRoot').classList.toggle('collapsed');
+  localStorage.setItem('vtm_sidebar',c?'collapsed':'expanded');
+  if(chart)chart.resize();
+};
+
+// Form type segment
+$('#seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  state.txType=b.dataset.type;state.cat=(S.CATS[state.txType][0]||{}).id||'';
+  $('#seg').querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  $('#seg').classList.toggle('exp',state.txType==='income');renderFormCats();
+});
+// Recurring type segment
+$('#recSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  state.recType=b.dataset.type;state.recCat=(S.CATS[state.recType][0]||{}).id||'';
+  $('#recSeg').querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  $('#recSeg').classList.toggle('exp',state.recType==='income');renderRecCats();
+});
+
+// Filters
+let searchTm;
+$('#searchInput').addEventListener('input',e=>{
+  const v=e.target.value.trim();
+  clearTimeout(searchTm);
+  searchTm=setTimeout(()=>{state.filter.q=v;renderList();renderChart();},140);
+});
+$('#typeChips').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  state.filter.type=b.dataset.f;$('#typeChips').querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderList();renderChart();
+});
+$('#catFilter').addEventListener('change',e=>{state.filter.cat=e.target.value;renderList();renderChart();});
+$('#walletFilter').addEventListener('change',e=>{state.filter.wallet=e.target.value;renderList();renderChart();});
+datePicker.attach($('#fromDate'),iso=>{state.filter.from=iso;clearDatePresets();renderList();renderChart();});
+datePicker.attach($('#toDate'),iso=>{state.filter.to=iso;clearDatePresets();renderList();renderChart();});
+datePicker.attach($('#dateInput'));
+datePicker.attach($('#trDate'));
+
+// Date range presets (chips)
+function rangeFor(key){
+  const now=new Date();const y=now.getFullYear(),m=now.getMonth();
+  switch(key){
+    case 'today':return [isoOf(now),isoOf(now)];
+    case '7d':{const f=new Date(now);f.setDate(f.getDate()-6);return [isoOf(f),isoOf(now)];}
+    case '30d':{const f=new Date(now);f.setDate(f.getDate()-29);return [isoOf(f),isoOf(now)];}
+    case 'month':return [isoOf(new Date(y,m,1)),isoOf(new Date(y,m+1,0))];
+    case 'lastmonth':return [isoOf(new Date(y,m-1,1)),isoOf(new Date(y,m,0))];
+    case 'year':return [isoOf(new Date(y,0,1)),isoOf(new Date(y,11,31))];
+  }
+  return ['',''];
+}
+function clearDatePresets(){$('#datePresets').querySelectorAll('button').forEach(x=>x.classList.remove('on'));}
+$('#datePresets').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  const wasOn=b.classList.contains('on');
+  clearDatePresets();
+  if(wasOn){state.filter.from='';state.filter.to='';datePicker.set('fromDate','');datePicker.set('toDate','');}
+  else{const [f,t2]=rangeFor(b.dataset.range);b.classList.add('on');state.filter.from=f;state.filter.to=t2;datePicker.set('fromDate',f);datePicker.set('toDate',t2);}
+  renderList();renderChart();
+});
+$('#clearFilter').onclick=()=>{
+  state.filter={q:'',type:'all',cat:'all',wallet:'all',from:'',to:''};
+  $('#searchInput').value='';$('#catFilter').value='all';$('#walletFilter').value='all';datePicker.set('fromDate','');datePicker.set('toDate','');
+  $('#typeChips').querySelectorAll('button').forEach(x=>x.classList.remove('on'));$('#typeChips').querySelector('[data-f=all]').classList.add('on');
+  clearDatePresets();syncCsels();
+  renderList();renderChart();
+};
+$('#exportBtn').onclick=exportCSV;
+
+// Add transaction (with ripple)
+$('#addBtn').onclick=function(e){
+  const r=document.createElement('span');r.className='ripple';const rect=this.getBoundingClientRect();const d=Math.max(rect.width,rect.height);
+  r.style.width=r.style.height=d+'px';r.style.left=(e.clientX-rect.left-d/2)+'px';r.style.top=(e.clientY-rect.top-d/2)+'px';
+  this.appendChild(r);setTimeout(()=>r.remove(),600);addTx();
+};
+$('#amtInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('#addBtn').click();});
+$('#descInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('#amtInput').focus();});
+
+// Wallets
+$('#addWalletBtn').onclick=addWallet;
+$('#transferBtn').onclick=openTransfer;
+$('#trCancel').onclick=closeTransfer;
+$('#trConfirm').onclick=doTransfer;
+$('#transferModal').addEventListener('click',e=>{if(e.target===$('#transferModal'))closeTransfer();});
+
+// Edit wallet modal
+attachThousands($('#ewInit'));
+$('#ewCancel').onclick=()=>$('#walletModal').classList.remove('show');
+$('#ewSave').onclick=saveWalletEdit;
+$('#walletModal').addEventListener('click',e=>{if(e.target===$('#walletModal'))$('#walletModal').classList.remove('show');});
+
+// Edit transaction modal
+attachThousands($('#etAmt'));datePicker.attach($('#etDate'));
+$('#etSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  etType=b.dataset.type;etCat=(S.CATS[etType][0]||{}).id||'';
+  $('#etSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));
+  $('#etSeg').classList.toggle('exp',etType==='income');renderEtCats();
+});
+$('#etCancel').onclick=()=>$('#editTxModal').classList.remove('show');
+$('#etSave').onclick=saveTxEdit;
+$('#editTxModal').addEventListener('click',e=>{if(e.target===$('#editTxModal'))$('#editTxModal').classList.remove('show');});
+
+// Collapse / expand all months
+$('#collapseAll').onclick=()=>{
+  const keys=[...new Set(applyFilters().map(tr=>monthKey(tr.date)))];
+  const allCollapsed=keys.length&&keys.every(k=>collapsedMonths.has(k));
+  if(allCollapsed)collapsedMonths.clear();else keys.forEach(k=>collapsedMonths.add(k));
+  $('#collapseAll').innerHTML=allCollapsed?t('list.collapse'):t('list.expand');
+  renderList();
+};
+
+// Confirm modal
+$('#confirmCancel').onclick=()=>resolveConfirm(false);
+$('#confirmOk').onclick=()=>resolveConfirm(true);
+$('#confirmModal').addEventListener('click',e=>{if(e.target===$('#confirmModal'))resolveConfirm(false);});
+
+// Recurring
+$('#addRecBtn').onclick=addRecurring;
+
+// Budget
+$('#saveBudgetBtn').onclick=saveBudgetTotal;
+
+// Savings goals
+attachThousands($('#goalTarget'));attachThousands($('#gmAmt'));datePicker.attach($('#gmDate'));
+$('#addGoalBtn').onclick=openGoalAdd;
+$('#goalCancel').onclick=()=>$('#goalModal').classList.remove('show');
+$('#goalSave').onclick=saveGoal;
+$('#goalName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#goalTarget').focus();});
+$('#goalModal').addEventListener('click',e=>{if(e.target===$('#goalModal'))$('#goalModal').classList.remove('show');});
+$('#gmCancel').onclick=()=>$('#goalMoveModal').classList.remove('show');
+$('#gmConfirm').onclick=doGoalMove;
+$('#gmAmt').addEventListener('keydown',e=>{if(e.key==='Enter')doGoalMove();});
+$('#goalMoveModal').addEventListener('click',e=>{if(e.target===$('#goalMoveModal'))$('#goalMoveModal').classList.remove('show');});
+
+// Debts & loans
+attachThousands($('#debtAmt'));attachThousands($('#dmAmt'));datePicker.attach($('#debtDate'));datePicker.attach($('#dmDate'));
+$('#addBorrowBtn').onclick=()=>openDebtAdd('borrow');
+$('#addLendBtn').onclick=()=>openDebtAdd('lend');
+$('#debtSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>setDebtDir(b.dataset.dir));
+$('#debtCancel').onclick=()=>$('#debtModal').classList.remove('show');
+$('#debtSave').onclick=saveDebt;
+$('#debtModal').addEventListener('click',e=>{if(e.target===$('#debtModal'))$('#debtModal').classList.remove('show');});
+$('#dmCancel').onclick=()=>$('#debtMoveModal').classList.remove('show');
+$('#dmConfirm').onclick=doDebtMove;
+$('#dmAmt').addEventListener('keydown',e=>{if(e.key==='Enter')doDebtMove();});
+$('#debtMoveModal').addEventListener('click',e=>{if(e.target===$('#debtMoveModal'))$('#debtMoveModal').classList.remove('show');});
+
+// Categories
+$('#addExpenseCatBtn').onclick=()=>openCatAdd('expense');
+$('#addIncomeCatBtn').onclick=()=>openCatAdd('income');
+$('#catSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>setCatModalType(b.dataset.type));
+$('#catCancel').onclick=()=>$('#catModal').classList.remove('show');
+$('#catSave').onclick=saveCat;
+$('#catNameInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveCat();});
+$('#catModal').addEventListener('click',e=>{if(e.target===$('#catModal'))$('#catModal').classList.remove('show');});
+
+// Logout
+$('#logoutBtn').onclick=()=>{if(auth)signOut(auth);};
+
+/* ===== Auth UI ===== */
+let signupMode=false;
+function authError(e){const k='err.'+e.code;const m=(I18N[S.lang][k]||I18N.vi[k]);$('#authErr').textContent='⚠️ '+(m||e.message||t('err.generic'));}
+function setAuthTexts(){
+  $('#authTitle').textContent=signupMode?t('auth.signupTitle'):t('auth.welcome');
+  $('#authSub').textContent=signupMode?t('auth.signupSub'):t('auth.welcomeSub');
+  $('#authSubmit').textContent=signupMode?t('auth.signup'):t('auth.login');
+  $('#authToggle').innerHTML=signupMode
+    ?`${t('auth.hasAccount')} <a id="toggleLink">${t('auth.loginNow')}</a>`
+    :`${t('auth.noAccount')} <a id="toggleLink">${t('auth.signupNow')}</a>`;
+  $('#toggleLink').onclick=toggleAuthMode;
+}
+function toggleAuthMode(){signupMode=!signupMode;setAuthTexts();$('#authErr').textContent='';}
+$('#toggleLink').onclick=toggleAuthMode;
+$('#authForm').addEventListener('submit',async e=>{
+  e.preventDefault();if(!auth)return;
+  const email=$('#email').value.trim(),pw=$('#password').value;const btn=$('#authSubmit');btn.disabled=true;$('#authErr').textContent='';
+  try{if(signupMode)await createUserWithEmailAndPassword(auth,email,pw);else await signInWithEmailAndPassword(auth,email,pw);}
+  catch(err){authError(err);}finally{btn.disabled=false;}
+});
+$('#googleBtn').onclick=async()=>{if(!auth)return;$('#authErr').textContent='';try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(err){authError(err);}};
+
+// Initial language paint
+applyLang();
