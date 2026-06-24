@@ -273,6 +273,8 @@ const datePicker=(function(){
     if(pop)return;
     pop=document.createElement('div');pop.className='dp-pop';document.body.appendChild(pop);
     pop.addEventListener('mousedown',e=>e.preventDefault());
+    // Chặn click trong popup lan ra document (tránh tự đóng khi render() thay nội dung nút)
+    pop.addEventListener('click',e=>e.stopPropagation());
     document.addEventListener('click',e=>{if(active&&pop&&!pop.contains(e.target)&&e.target!==active.input)close();});
     window.addEventListener('resize',close);window.addEventListener('scroll',close,true);
   }
