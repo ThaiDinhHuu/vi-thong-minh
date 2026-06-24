@@ -70,6 +70,7 @@
       <button data-tab="recurring" data-i18n="tab.recurring">🔁 Định kỳ</button>
       <button data-tab="budget" data-i18n="tab.budget">🎯 Ngân sách</button>
       <button data-tab="savings" data-i18n="tab.savings">🐷 Tích lũy</button>
+      <button data-tab="debts" data-i18n="tab.debts">🤝 Nợ</button>
       <button data-tab="cats" data-i18n="tab.cats">📂 Danh mục</button>
     </div>
 
@@ -237,6 +238,22 @@
       </div>
     </div>
 
+    <!-- ===== TAB: DEBTS & LOANS ===== -->
+    <div class="tab-page" id="page-debts">
+      <div class="panel glass" style="margin-bottom:18px">
+        <h2><span class="dot"></span> <span data-i18n="debts.payableTitle">Phải trả (tôi đi vay)</span>
+          <span class="right"><button class="btn-ghost" id="addBorrowBtn" style="padding:8px 14px;font-size:13px" data-i18n="debts.addBorrow">➕ Thêm khoản vay</button></span>
+        </h2>
+        <div class="goal-grid" id="payableList"></div>
+      </div>
+      <div class="panel glass">
+        <h2><span class="dot"></span> <span data-i18n="debts.receivableTitle">Phải thu (tôi cho vay)</span>
+          <span class="right"><button class="btn-ghost" id="addLendBtn" style="padding:8px 14px;font-size:13px" data-i18n="debts.addLend">➕ Thêm khoản cho vay</button></span>
+        </h2>
+        <div class="goal-grid" id="receivableList"></div>
+      </div>
+    </div>
+
     <!-- ===== TAB: CATEGORIES ===== -->
     <div class="tab-page" id="page-cats">
       <div class="panel glass" style="margin-bottom:18px">
@@ -344,6 +361,46 @@
       <div class="modal-actions">
         <button class="btn-ghost" id="gmCancel" data-i18n="btn.cancel">Huỷ</button>
         <button class="btn-grad" id="gmConfirm" style="box-shadow:none" data-i18n="btn.confirm">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DEBT MODAL (add/edit) ===== -->
+  <div class="modal-bg" id="debtModal">
+    <div class="glass modal">
+      <h3 id="debtModalTitle" data-i18n="debts.addTitle">➕ Thêm khoản nợ</h3>
+      <div class="seg" id="debtSeg"><div class="slider"></div>
+        <button class="active" data-dir="borrow" data-i18n="debts.iBorrow">Tôi đi vay</button>
+        <button data-dir="lend" data-i18n="debts.iLend">Tôi cho vay</button>
+      </div>
+      <div class="field"><label data-i18n="debts.person">Tên người</label><input id="debtName" maxlength="24" placeholder="VD: Anh Nam" data-i18n-ph="debts.personPh" /></div>
+      <div id="debtInitFields">
+        <div class="row2">
+          <div class="field"><label data-i18n="form.amount">Số tiền (₫)</label><input id="debtAmt" type="text" inputmode="numeric" placeholder="0" autocomplete="off" /></div>
+          <div class="field"><label data-i18n="form.date">Ngày</label><input id="debtDate" type="date" /></div>
+        </div>
+        <div class="field"><label id="debtWalletLabel" data-i18n="debts.intoWallet">Nhận vào ví</label><select id="debtWallet"></select></div>
+      </div>
+      <div class="field"><label data-i18n="debts.note">Ghi chú (tuỳ chọn)</label><input id="debtNote" maxlength="40" /></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="debtCancel" data-i18n="btn.cancel">Huỷ</button>
+        <button class="btn-grad" id="debtSave" style="box-shadow:none" data-i18n="btn.saveChanges">💾 Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DEBT MOVE MODAL (repay/collect) ===== -->
+  <div class="modal-bg" id="debtMoveModal">
+    <div class="glass modal">
+      <h3 id="debtMoveTitle">Trả nợ</h3>
+      <div class="field"><label id="debtMoveWalletLabel" data-i18n="debts.fromWallet">Từ ví</label><select id="dmWallet"></select></div>
+      <div class="row2">
+        <div class="field"><label data-i18n="form.amount">Số tiền (₫)</label><input id="dmAmt" type="text" inputmode="numeric" placeholder="0" autocomplete="off" /></div>
+        <div class="field"><label data-i18n="form.date">Ngày</label><input id="dmDate" type="date" /></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="dmCancel" data-i18n="btn.cancel">Huỷ</button>
+        <button class="btn-grad" id="dmConfirm" style="box-shadow:none" data-i18n="btn.confirm">Xác nhận</button>
       </div>
     </div>
   </div>

@@ -96,6 +96,15 @@ const I18N={
     'toast.goalCreated':'🐷 Đã tạo hũ','toast.goalUpdated':'💾 Đã cập nhật hũ','toast.goalDeleted':'🗑️ Đã xoá hũ',
     'toast.deposited':'🐷 Đã nạp {amt}','toast.withdrawn':'💸 Đã rút {amt}','toast.pickWallet':'⚠️ Chọn ví','toast.exceedSaved':'⚠️ Vượt quá số dư trong hũ','toast.need1Wallet':'⚠️ Cần ít nhất 1 ví',
     'confirm.deleteGoalTitle':'🗑️ Xoá hũ','confirm.deleteGoalMsg':'Xoá hũ "{name}"?','confirm.deleteGoalMoneyMsg':'Xoá hũ "{name}"? Số tiền {amt} sẽ được chuyển về ví {wallet}.',
+    'tab.debts':'🤝 Nợ',
+    'debts.payableTitle':'Phải trả (tôi đi vay)','debts.receivableTitle':'Phải thu (tôi cho vay)','debts.addBorrow':'➕ Thêm khoản vay','debts.addLend':'➕ Thêm khoản cho vay','debts.empty':'Chưa có khoản nào.',
+    'debts.addTitle':'➕ Thêm khoản nợ','debts.editTitle':'✏️ Sửa khoản nợ','debts.iBorrow':'Tôi đi vay','debts.iLend':'Tôi cho vay','debts.person':'Tên người','debts.personPh':'VD: Anh Nam','debts.note':'Ghi chú (tuỳ chọn)',
+    'debts.intoWallet':'Nhận vào ví','debts.outWallet':'Chi từ ví','debts.fromWallet':'Từ ví',
+    'debts.youOwe':'Còn nợ','debts.owedYou':'Còn phải thu','debts.payable':'Khoản phải trả','debts.receivable':'Khoản phải thu','debts.settled':'Đã tất toán',
+    'debts.repay':'Trả nợ','debts.collect':'Thu nợ','debts.enterName':'⚠️ Nhập tên người',
+    'debts.borrowDesc':'Vay từ {name}','debts.lendDesc':'Cho {name} vay','debts.repayDesc':'Trả nợ {name}','debts.collectDesc':'Thu nợ {name}','debts.settleDesc':'Tất toán với {name}',
+    'toast.debtCreated':'🤝 Đã thêm khoản nợ','toast.debtUpdated':'💾 Đã cập nhật','toast.debtDeleted':'🗑️ Đã xoá khoản nợ','toast.repaid':'✅ Đã trả {amt}','toast.collected':'✅ Đã thu {amt}','toast.exceedDebt':'⚠️ Vượt quá số còn lại',
+    'confirm.deleteDebtTitle':'🗑️ Xoá khoản nợ','confirm.deleteDebtMsg':'Xoá khoản nợ với "{name}"?','confirm.deleteDebtPayMsg':'Xoá khoản nợ "{name}"? Coi như trả nốt {amt} từ ví {wallet}.','confirm.deleteDebtCollectMsg':'Xoá khoản nợ "{name}"? Coi như thu nốt {amt} về ví {wallet}.',
     'err.generic':'Đã xảy ra lỗi',
     'err.auth/invalid-email':'Email không hợp lệ','err.auth/user-not-found':'Tài khoản không tồn tại','err.auth/wrong-password':'Sai mật khẩu',
     'err.auth/invalid-credential':'Email hoặc mật khẩu không đúng','err.auth/email-already-in-use':'Email đã được đăng ký','err.auth/weak-password':'Mật khẩu quá yếu (tối thiểu 6 ký tự)',
@@ -175,6 +184,15 @@ const I18N={
     'toast.goalCreated':'🐷 Goal created','toast.goalUpdated':'💾 Goal updated','toast.goalDeleted':'🗑️ Goal deleted',
     'toast.deposited':'🐷 Deposited {amt}','toast.withdrawn':'💸 Withdrew {amt}','toast.pickWallet':'⚠️ Pick a wallet','toast.exceedSaved':'⚠️ Exceeds jar balance','toast.need1Wallet':'⚠️ Need at least 1 wallet',
     'confirm.deleteGoalTitle':'🗑️ Delete goal','confirm.deleteGoalMsg':'Delete goal "{name}"?','confirm.deleteGoalMoneyMsg':'Delete goal "{name}"? {amt} will be returned to {wallet}.',
+    'tab.debts':'🤝 Debts',
+    'debts.payableTitle':'Payable (I borrowed)','debts.receivableTitle':'Receivable (I lent)','debts.addBorrow':'➕ Add borrowing','debts.addLend':'➕ Add lending','debts.empty':'Nothing here yet.',
+    'debts.addTitle':'➕ Add debt','debts.editTitle':'✏️ Edit debt','debts.iBorrow':'I borrowed','debts.iLend':'I lent','debts.person':'Person','debts.personPh':'e.g. Nam','debts.note':'Note (optional)',
+    'debts.intoWallet':'Receive into wallet','debts.outWallet':'Pay from wallet','debts.fromWallet':'From wallet',
+    'debts.youOwe':'You owe','debts.owedYou':'Owed to you','debts.payable':'Payable','debts.receivable':'Receivable','debts.settled':'Settled',
+    'debts.repay':'Repay','debts.collect':'Collect','debts.enterName':'⚠️ Enter a name',
+    'debts.borrowDesc':'Borrowed from {name}','debts.lendDesc':'Lent to {name}','debts.repayDesc':'Repaid {name}','debts.collectDesc':'Collected from {name}','debts.settleDesc':'Settled with {name}',
+    'toast.debtCreated':'🤝 Debt added','toast.debtUpdated':'💾 Updated','toast.debtDeleted':'🗑️ Debt deleted','toast.repaid':'✅ Repaid {amt}','toast.collected':'✅ Collected {amt}','toast.exceedDebt':'⚠️ Exceeds remaining',
+    'confirm.deleteDebtTitle':'🗑️ Delete debt','confirm.deleteDebtMsg':'Delete debt with "{name}"?','confirm.deleteDebtPayMsg':'Delete debt "{name}"? Treats remaining {amt} as repaid from {wallet}.','confirm.deleteDebtCollectMsg':'Delete debt "{name}"? Treats remaining {amt} as collected into {wallet}.',
     'err.generic':'Something went wrong',
     'err.auth/invalid-email':'Invalid email','err.auth/user-not-found':'Account not found','err.auth/wrong-password':'Wrong password',
     'err.auth/invalid-credential':'Email or password is incorrect','err.auth/email-already-in-use':'Email already registered','err.auth/weak-password':'Password too weak (min 6 characters)',
@@ -216,7 +234,7 @@ let state={
   recType:'expense', recCat:'food', recIcon:'💵',
   wIcon:'💵',
   filter:{q:'',type:'all',cat:'all',wallet:'all',from:'',to:''},
-  txs:[], wallets:[], recurring:[], goals:[], budget:{total:0,perCat:{}},
+  txs:[], wallets:[], recurring:[], goals:[], debts:[], budget:{total:0,perCat:{}},
 };
 let chart, db, auth, currentUser=null;
 let unsubs=[];
@@ -378,10 +396,18 @@ function buildThemeGrid(){
 const escapeHtml=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const walletById=id=>state.wallets.find(w=>w.id===id);
 const walletName=id=>{
-  if(id&&id.indexOf&&id.indexOf('g:')===0){const g=state.goals.find(x=>x.id===id.slice(2));return g?`${g.emo} ${g.name}`:'🐷 '+t('savings.jar');}
+  if(id&&id.indexOf){
+    if(id.indexOf('g:')===0){const g=state.goals.find(x=>x.id===id.slice(2));return g?`${g.emo} ${g.name}`:'🐷 '+t('savings.jar');}
+    if(id.indexOf('d:')===0){const d=state.debts.find(x=>x.id===id.slice(2));return d?`🤝 ${d.name}`:'🤝';}
+  }
   const w=walletById(id);return w?`${w.icon} ${w.name}`:'—';
 };
-function goalSaved(id){const gref='g:'+id;let s=0;for(const tr of state.txs){if(tr.type==='transfer'){if(tr.toWallet===gref)s+=tr.amount;if(tr.fromWallet===gref)s-=tr.amount;}}return s;}
+// refBalance over transfers: +toWallet, -fromWallet
+function refBalance(ref){let s=0;for(const tr of state.txs){if(tr.type==='transfer'){if(tr.toWallet===ref)s+=tr.amount;if(tr.fromWallet===ref)s-=tr.amount;}}return s;}
+function goalSaved(id){return refBalance('g:'+id);}
+function debtBalance(id){return refBalance('d:'+id);}
+// outstanding (positive = remaining): borrow -> you owe (-balance); lend -> owed to you (+balance)
+function debtOutstanding(d){const b=debtBalance(d.id);return d.dir==='borrow'?-b:b;}
 
 function toast(msg,kind){const el=$('#toast');el.className='toast show'+(kind?' '+kind:'');el.innerHTML=msg;clearTimeout(el._tm);el._tm=setTimeout(()=>el.classList.remove('show'),2600);}
 const show=el=>el.classList.remove('app-hidden');
@@ -416,7 +442,7 @@ function applyLang(){
   setAuthTexts();
   renderFormCats();renderRecCats();renderEtCats();
   updateCollapseAllLabel();
-  renderAll();renderRecurring();renderBudget();renderCategoryManage();renderSavings();
+  renderAll();renderRecurring();renderBudget();renderCategoryManage();renderSavings();renderDebts();
   syncCsels();
 }
 function setLang(l){lang=l;localStorage.setItem('vtm_lang',l);applyLang();}
@@ -436,7 +462,7 @@ else{
       paintUser(user);subscribeAll(user.uid);
     }else{
       unsubs.forEach(u=>u&&u());unsubs=[];recurringBusy=false;walletsLoaded=false;recurringLoaded=false;
-      state.txs=[];state.wallets=[];state.recurring=[];state.goals=[];state.budget={total:0,perCat:{}};
+      state.txs=[];state.wallets=[];state.recurring=[];state.goals=[];state.debts=[];state.budget={total:0,perCat:{}};
       renderAll();hide($('#appRoot'));hide($('#loadingCard'));$('#overlay').classList.remove('hide');show($('#authCard'));
     }
   });
@@ -489,6 +515,11 @@ function subscribeAll(uid){
   unsubs.push(onSnapshot(col(uid,'goals'),snap=>{
     state.goals=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
     renderSavings();renderStats();renderList();
+  },err=>console.error(err)));
+
+  unsubs.push(onSnapshot(col(uid,'debts'),snap=>{
+    state.debts=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+    renderDebts();renderStats();renderList();
   },err=>console.error(err)));
 
   unsubs.push(onSnapshot(doc(db,'users',uid,'settings','budget'),snap=>{
@@ -622,7 +653,8 @@ function renderStats(){
   const exp=state.txs.filter(tr=>tr.type==='expense').reduce((s,tr)=>s+tr.amount,0);
   const walletsTotal=state.wallets.reduce((s,w)=>s+walletBalance(w),0);
   const goalsTotal=state.goals.reduce((s,g)=>s+goalSaved(g.id),0);
-  const bal=walletsTotal+goalsTotal;
+  const debtsTotal=state.debts.reduce((s,d)=>s+debtBalance(d.id),0); // lend:+receivable, borrow:-payable
+  const bal=walletsTotal+goalsTotal+debtsTotal;
   animateNumber($('#balanceVal'),bal);
   animateNumber($('#incomeVal'),inc);
   animateNumber($('#expenseVal'),exp);
@@ -632,12 +664,12 @@ function renderStats(){
   // per-wallet (+ savings) breakdown
   const inner=$('#walletBreakInner'), toggle=$('#walletToggle');
   if(inner){
-    if(!state.wallets.length && !state.goals.length){
+    if(!state.wallets.length && !state.goals.length && !state.debts.length){
       inner.innerHTML=`<div class="hint" style="padding:6px 0">${t('stat.noWallets')}</div>`;
       if(toggle)toggle.style.display='none';
     }else{
       if(toggle)toggle.style.display='';
-      const maxAbs=Math.max(1,...state.wallets.map(w=>Math.abs(walletBalance(w))),...state.goals.map(g=>Math.abs(goalSaved(g.id))));
+      const maxAbs=Math.max(1,...state.wallets.map(w=>Math.abs(walletBalance(w))),...state.goals.map(g=>Math.abs(goalSaved(g.id))),...state.debts.map(d=>Math.abs(debtBalance(d.id))));
       const row=(emo,name,amt,c)=>`<div class="wb-row">
           <div class="wb-ic" style="background:${c}22;color:${c}">${emo}</div>
           <div class="wb-info"><div class="wb-name">${escapeHtml(name)}</div>
@@ -646,6 +678,7 @@ function renderStats(){
         </div>`;
       let html=state.wallets.map(w=>row(w.icon,w.name,walletBalance(w),WALLET_COLORS[w.icon]||'#7c5cff')).join('');
       html+=state.goals.map(g=>row(g.emo,g.name,goalSaved(g.id),'#7c5cff')).join('');
+      html+=state.debts.map(d=>row(d.dir==='borrow'?'🔻':'🔺',d.name,debtBalance(d.id),'#94a3b8')).join('');
       inner.innerHTML=html;
     }
   }
@@ -776,7 +809,7 @@ function renderWallets(){
   });
   // populate wallet selectors
   const opts=state.wallets.map(w=>`<option value="${w.id}">${w.icon} ${escapeHtml(w.name)}</option>`).join('');
-  ['#walletInput','#recWallet','#trFrom','#trTo','#etWallet','#etFrom','#etTo','#gmWallet'].forEach(sel=>{
+  ['#walletInput','#recWallet','#trFrom','#trTo','#etWallet','#etFrom','#etTo','#gmWallet','#debtWallet','#dmWallet'].forEach(sel=>{
     const e=$(sel);if(!e)return;const cur=e.value;e.innerHTML=opts;
     if([...e.options].some(o=>o.value===cur))e.value=cur;
   });
@@ -1158,6 +1191,125 @@ async function doGoalMove(){
   }catch(e){console.error(e);toast(t('toast.transferFail'),'danger');}
 }
 
+/* ===== Debts & Loans ===== */
+function renderDebts(){
+  [['borrow','#payableList'],['lend','#receivableList']].forEach(([dir,sel])=>{
+    const wrap=$(sel);if(!wrap)return;
+    const list=state.debts.filter(d=>d.dir===dir);
+    if(!list.length){wrap.innerHTML=`<div class="hint">${t('debts.empty')}</div>`;return;}
+    wrap.innerHTML='';
+    list.forEach(d=>{
+      const out=debtOutstanding(d);const settled=out<=0.5;
+      const label=dir==='borrow'?t('debts.youOwe'):t('debts.owedYou');
+      const actLabel=dir==='borrow'?t('debts.repay'):t('debts.collect');
+      const tag=dir==='borrow'?t('debts.payable'):t('debts.receivable');
+      const el=document.createElement('div');el.className='glass goal'+(settled?' done':'');
+      el.innerHTML=`<div class="goal-top">
+          <div class="goal-ic">${dir==='borrow'?'🔻':'🔺'}</div>
+          <div class="goal-meta"><div class="goal-name">${escapeHtml(d.name)}${settled?' ✅':''}</div>
+            <div class="goal-sub">${settled?t('debts.settled'):label+': '+fmt(out)}${d.note?' • '+escapeHtml(d.note):''}</div></div>
+          <div class="goal-actions"><button class="gedit" title="${t('tt.edit')}">✎</button><button class="gdel" title="${t('tt.delete')}">🗑</button></div>
+        </div>
+        <div class="goal-foot"><span class="goal-pct" style="font-size:12.5px;color:var(--txt-dim);font-weight:600">${tag}</span>
+          <div class="goal-btns">${settled?'':`<button class="gdep btn-grad" style="box-shadow:none">${actLabel}</button>`}</div></div>`;
+      el.querySelector('.gedit').onclick=()=>openDebtEdit(d);
+      el.querySelector('.gdel').onclick=()=>deleteDebt(d);
+      const act=el.querySelector('.gdep');if(act)act.onclick=()=>openDebtMove(d);
+      wrap.appendChild(el);
+    });
+  });
+}
+let debtEditId=null, debtDir='borrow';
+function setDebtDir(dir){
+  debtDir=dir;
+  $('#debtSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.dir===dir));
+  $('#debtSeg').classList.toggle('exp',dir==='lend');
+  $('#debtWalletLabel').textContent=dir==='borrow'?t('debts.intoWallet'):t('debts.outWallet');
+}
+function openDebtAdd(dir){
+  debtEditId=null;
+  $('#debtModalTitle').textContent=t('debts.addTitle');
+  $('#debtSeg').style.display='';$('#debtInitFields').style.display='';
+  $('#debtName').value='';$('#debtAmt').value='';$('#debtNote').value='';datePicker.set('debtDate',todayISO());
+  setDebtDir(dir);syncCsels();
+  $('#debtModal').classList.add('show');setTimeout(()=>$('#debtName').focus(),50);
+}
+function openDebtEdit(d){
+  debtEditId=d.id;debtDir=d.dir;
+  $('#debtModalTitle').textContent=t('debts.editTitle');
+  $('#debtSeg').style.display='none';$('#debtInitFields').style.display='none';
+  $('#debtName').value=d.name;$('#debtNote').value=d.note||'';
+  $('#debtModal').classList.add('show');
+}
+async function saveDebt(){
+  if(!currentUser)return;
+  const name=$('#debtName').value.trim();const note=$('#debtNote').value.trim();
+  if(!name){toast(t('debts.enterName'),'warn');shake($('#debtName'));return;}
+  try{
+    if(debtEditId){
+      await updateDoc(doc(db,'users',currentUser.uid,'debts',debtEditId),{name,note});
+      toast(t('toast.debtUpdated'));
+    }else{
+      const amount=num($('#debtAmt').value);const wallet=$('#debtWallet').value;const date=datePicker.get('debtDate')||todayISO();
+      if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#debtAmt'));return;}
+      if(!wallet){toast(t('toast.pickWallet'),'warn');return;}
+      const ref=await addDoc(col(currentUser.uid,'debts'),{dir:debtDir,name,note,order:state.debts.length,createdAt:serverTimestamp()});
+      const dref='d:'+ref.id;
+      const data=debtDir==='borrow'
+        ?{type:'transfer',amount,fromWallet:dref,toWallet:wallet,desc:t('debts.borrowDesc',{name}),date,createdAt:serverTimestamp()}
+        :{type:'transfer',amount,fromWallet:wallet,toWallet:dref,desc:t('debts.lendDesc',{name}),date,createdAt:serverTimestamp()};
+      await addDoc(col(currentUser.uid,'transactions'),data);
+      toast(t('toast.debtCreated'));
+    }
+    $('#debtModal').classList.remove('show');
+  }catch(e){console.error(e);toast(t('toast.catSaveFail'),'danger');}
+}
+async function deleteDebt(d){
+  const out=debtOutstanding(d), firstW=state.wallets[0];
+  let msg=t('confirm.deleteDebtMsg',{name:d.name});
+  if(out>0.5&&firstW){
+    msg=d.dir==='borrow'
+      ?t('confirm.deleteDebtPayMsg',{name:d.name,amt:fmt(out),wallet:firstW.icon+' '+firstW.name})
+      :t('confirm.deleteDebtCollectMsg',{name:d.name,amt:fmt(out),wallet:firstW.icon+' '+firstW.name});
+  }
+  const ok=await confirmDialog(msg,{title:t('confirm.deleteDebtTitle')});
+  if(!ok)return;
+  try{
+    if(out>0.5&&firstW){
+      const dref='d:'+d.id;
+      const data=d.dir==='borrow'
+        ?{type:'transfer',amount:out,fromWallet:firstW.id,toWallet:dref,desc:t('debts.settleDesc',{name:d.name}),date:todayISO(),createdAt:serverTimestamp()}
+        :{type:'transfer',amount:out,fromWallet:dref,toWallet:firstW.id,desc:t('debts.settleDesc',{name:d.name}),date:todayISO(),createdAt:serverTimestamp()};
+      await addDoc(col(currentUser.uid,'transactions'),data);
+    }
+    await deleteDoc(doc(db,'users',currentUser.uid,'debts',d.id));toast(t('toast.debtDeleted'));
+  }catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+let dmDebtId=null;
+function openDebtMove(d){
+  if(!state.wallets.length){toast(t('toast.need1Wallet'),'warn');return;}
+  dmDebtId=d.id;const out=debtOutstanding(d);
+  $('#debtMoveTitle').textContent=(d.dir==='borrow'?t('debts.repay'):t('debts.collect'))+' · '+d.name;
+  $('#debtMoveWalletLabel').textContent=d.dir==='borrow'?t('debts.fromWallet'):t('debts.intoWallet');
+  $('#dmAmt').value=out?Number(Math.round(out)).toLocaleString('en-US'):'';datePicker.set('dmDate',todayISO());
+  $('#debtMoveModal').classList.add('show');syncCsels();
+}
+async function doDebtMove(){
+  if(!currentUser||!dmDebtId)return;
+  const d=state.debts.find(x=>x.id===dmDebtId);if(!d)return;
+  const wallet=$('#dmWallet').value;const amount=num($('#dmAmt').value);const date=datePicker.get('dmDate')||todayISO();
+  if(!wallet){toast(t('toast.pickWallet'),'warn');return;}
+  if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#dmAmt'));return;}
+  if(amount>debtOutstanding(d)+0.5){toast(t('toast.exceedDebt'),'warn');shake($('#dmAmt'));return;}
+  const dref='d:'+dmDebtId;
+  const data=d.dir==='borrow'
+    ?{type:'transfer',amount,fromWallet:wallet,toWallet:dref,desc:t('debts.repayDesc',{name:d.name}),date,createdAt:serverTimestamp()}
+    :{type:'transfer',amount,fromWallet:dref,toWallet:wallet,desc:t('debts.collectDesc',{name:d.name}),date,createdAt:serverTimestamp()};
+  try{await addDoc(col(currentUser.uid,'transactions'),data);$('#debtMoveModal').classList.remove('show');
+    toast(d.dir==='borrow'?t('toast.repaid',{amt:fmt(amount)}):t('toast.collected',{amt:fmt(amount)}));
+  }catch(e){console.error(e);toast(t('toast.transferFail'),'danger');}
+}
+
 function renderAll(){renderStats();renderWallets();renderList();renderChart();renderBudgetBanner();syncCsels();}
 
 function shake(el){el.style.animation='none';el.offsetHeight;el.style.animation='shake .4s';el.style.borderColor='var(--red)';setTimeout(()=>el.style.borderColor='',500);}
@@ -1236,6 +1388,7 @@ function activateTab(name){
   if(name==='budget')renderBudget();
   if(name==='cats')renderCategoryManage();
   if(name==='savings')renderSavings();
+  if(name==='debts')renderDebts();
 }
 $$('#tabs button').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
 // Khôi phục tab đã xem trước khi F5
@@ -1366,6 +1519,19 @@ $('#gmCancel').onclick=()=>$('#goalMoveModal').classList.remove('show');
 $('#gmConfirm').onclick=doGoalMove;
 $('#gmAmt').addEventListener('keydown',e=>{if(e.key==='Enter')doGoalMove();});
 $('#goalMoveModal').addEventListener('click',e=>{if(e.target===$('#goalMoveModal'))$('#goalMoveModal').classList.remove('show');});
+
+// Debts & loans
+attachThousands($('#debtAmt'));attachThousands($('#dmAmt'));datePicker.attach($('#debtDate'));datePicker.attach($('#dmDate'));
+$('#addBorrowBtn').onclick=()=>openDebtAdd('borrow');
+$('#addLendBtn').onclick=()=>openDebtAdd('lend');
+$('#debtSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>setDebtDir(b.dataset.dir));
+$('#debtCancel').onclick=()=>$('#debtModal').classList.remove('show');
+$('#debtSave').onclick=saveDebt;
+$('#debtModal').addEventListener('click',e=>{if(e.target===$('#debtModal'))$('#debtModal').classList.remove('show');});
+$('#dmCancel').onclick=()=>$('#debtMoveModal').classList.remove('show');
+$('#dmConfirm').onclick=doDebtMove;
+$('#dmAmt').addEventListener('keydown',e=>{if(e.key==='Enter')doDebtMove();});
+$('#debtMoveModal').addEventListener('click',e=>{if(e.target===$('#debtMoveModal'))$('#debtMoveModal').classList.remove('show');});
 
 // Categories
 $('#addExpenseCatBtn').onclick=()=>openCatAdd('expense');
