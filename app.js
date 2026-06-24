@@ -728,6 +728,8 @@ function renderList(){
     m.days.forEach(g=>{
       const net=g.items.reduce((s,tr)=>s+(tr.type==='income'?tr.amount:tr.type==='expense'?-tr.amount:0),0);
       const dh=dayHeaderInfo(g.key);
+      // Mặc định: chỉ ngày hôm nay mở, các ngày khác tự thu gọn (chỉ áp dụng lần đầu thấy ngày đó)
+      if(!seenDays.has(g.key)){seenDays.add(g.key);if(g.key!==todayISO())collapsedDays.add(g.key);}
       const dCol=collapsedDays.has(g.key);
       const hdr=document.createElement('div');hdr.className='month-hdr'+(dCol?' collapsed':'');
       hdr.innerHTML=`<div class="mt"><span class="day-caret">▾</span> ${dh.tag?`<span class="rel">${dh.tag}</span>`:'📅'} <span class="wd">${dh.wd}</span> ${dh.dd} <span class="cnt">${g.items.length} ${t('count.txShort')}</span></div>
@@ -763,7 +765,7 @@ function renderList(){
     list.appendChild(block);
   });
 }
-let collapsedDays=new Set(), collapsedMonths=new Set();
+let collapsedDays=new Set(), collapsedMonths=new Set(), seenDays=new Set();
 function toggleCollapse(set,key,hdr,wrap){
   if(set.has(key)){set.delete(key);hdr.classList.remove('collapsed');wrap.classList.remove('collapsed');}
   else{set.add(key);hdr.classList.add('collapsed');wrap.classList.add('collapsed');}
