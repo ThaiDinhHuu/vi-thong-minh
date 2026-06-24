@@ -174,6 +174,32 @@ async function maybeRunRecurring(){
   }finally{recurringBusy=false;}
 }
 
+/* ===== Receipt photos (nén ảnh + lưu data URL vào Firestore) ===== */
+let addPhoto=null, etPhoto=null;
+function compressImage(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      const max=1000;let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+      if(w>=h&&w>max){h=Math.round(h*max/w);w=max;}else if(h>w&&h>max){w=Math.round(w*max/h);h=max;}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      let q=0.7,data=cv.toDataURL('image/jpeg',q);
+      while(data.length>700000&&q>0.3){q-=0.1;data=cv.toDataURL('image/jpeg',q);}
+      resolve(data);
+    };
+    img.onerror=reject;img.src=url;
+  });
+}
+function showPhoto(prefix,data){
+  const thumb=$('#'+prefix+'Thumb'),btn=$('#'+prefix+'Btn'),img=$('#'+prefix+'Img');
+  if(!thumb)return;
+  if(data){img.src=data;thumb.style.display='';btn.style.display='none';}
+  else{img.src='';thumb.style.display='none';btn.style.display='';}
+}
+function openLightbox(src){$('#lightboxImg').src=src;$('#photoLightbox').classList.add('show');}
+
 /* ===== Add / delete transaction ===== */
 function addTx(){
   if(!currentUser)return;
@@ -183,9 +209,11 @@ function addTx(){
   const walletId=$('#walletInput').value||'';
   if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#amtInput'));return;}
   const type=state.txType;
-  $('#descInput').value='';$('#amtInput').value='';
+  const data={type,cat:state.cat,desc,amount,date,walletId,createdAt:serverTimestamp()};
+  if(addPhoto)data.photo=addPhoto;
+  $('#descInput').value='';$('#amtInput').value='';addPhoto=null;showPhoto('photo',null);
   toast((type==='income'?'📈':'📉')+' '+t('toast.added',{amt:fmt(amount)}));
-  addDoc(col(currentUser.uid,'transactions'),{type,cat:state.cat,desc,amount,date,walletId,createdAt:serverTimestamp()})
+  addDoc(col(currentUser.uid,'transactions'),data)
     .then(()=>{if(type==='expense')checkBudgetWarning(date);})
     .catch(e=>{console.error(e);toast(t('toast.saveFail',{code:e.code}),'danger');});
 }
@@ -332,7 +360,8 @@ function renderList(){
         el.innerHTML=`<div class="emo">${emo}</div>
           <div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div>
           <div class="amt ${amtCls}">${amtTxt}</div>
-          <div class="act"><button class="edit" title="${t('tt.edit')}">✎</button><button class="del" title="${t('tt.delete')}">✕</button></div>`;
+          <div class="act">${tr.photo?`<button class="viewp" title="${t('tt.viewPhoto')}">📎</button>`:''}<button class="edit" title="${t('tt.edit')}">✎</button><button class="del" title="${t('tt.delete')}">✕</button></div>`;
+        const vp0=el.querySelector('.viewp');if(vp0)vp0.onclick=()=>openLightbox(tr.photo);
         el.querySelector('.edit').onclick=()=>openTxEdit(tr);
         el.querySelector('.del').onclick=()=>removeTx(tr);
         inner.appendChild(el);
@@ -410,7 +439,8 @@ function calTxRow(tr){
   if(tr.type==='transfer'){emo='🔄';title=escapeHtml(tr.desc)||t('tx.transfer');sub=`${walletName(tr.fromWallet)} → ${walletName(tr.toWallet)}`;amtCls='tr';amtTxt=fmt(tr.amount);}
   else{const ci=catInfo(tr.type,tr.cat);emo=ci.emo;title=escapeHtml(tr.desc)||ci.name;sub=ci.name;amtCls=tr.type==='income'?'in':'out';amtTxt=(tr.type==='income'?'+':'−')+fmt(tr.amount);}
   const wtag=tr.type!=='transfer'&&tr.walletId?`<span class="wtag">${walletName(tr.walletId)}</span>`:'';
-  el.innerHTML=`<div class="emo">${emo}</div><div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div><div class="amt ${amtCls}">${amtTxt}</div><div class="act"><button class="edit" title="${t('tt.edit')}">✎</button><button class="del" title="${t('tt.delete')}">✕</button></div>`;
+  el.innerHTML=`<div class="emo">${emo}</div><div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div><div class="amt ${amtCls}">${amtTxt}</div><div class="act">${tr.photo?`<button class="viewp" title="${t('tt.viewPhoto')}">📎</button>`:''}<button class="edit" title="${t('tt.edit')}">✎</button><button class="del" title="${t('tt.delete')}">✕</button></div>`;
+  const vp=el.querySelector('.viewp');if(vp)vp.onclick=()=>openLightbox(tr.photo);
   el.querySelector('.edit').onclick=()=>openTxEdit(tr);
   el.querySelector('.del').onclick=()=>removeTx(tr);
   return el;
@@ -509,6 +539,7 @@ let editTxId=null, etType='expense', etCat='food';
 function renderEtCats(){buildCats('#etCats',etType,etCat,id=>{etCat=id;renderEtCats();});}
 function openTxEdit(tr){
   editTxId=tr.id;
+  etPhoto=tr.photo||null;showPhoto('etPhoto',etPhoto);
   const isTr=tr.type==='transfer';
   $('#etNormal').style.display=isTr?'none':'';
   $('#etTransfer').style.display=isTr?'':'none';
@@ -544,6 +575,7 @@ async function saveTxEdit(){
   }else{
     data={type:etType,cat:etCat,amount,date,desc,walletId:$('#etWallet').value||''};
   }
+  data.photo=etPhoto||'';
   try{
     await updateDoc(doc(db,'users',currentUser.uid,'transactions',editTxId),data);
     $('#editTxModal').classList.remove('show');toast(t('toast.txUpdated'));
@@ -1438,6 +1470,17 @@ $('#restoreBtn').onclick=()=>$('#restoreFile').click();
 $('#restoreFile').onchange=e=>{const f=e.target.files[0];if(f)handleRestoreFile(f);e.target.value='';};
 $('#importCsvBtn').onclick=()=>$('#csvFile').click();
 $('#csvFile').onchange=e=>{const f=e.target.files[0];if(f)handleCsvFile(f);e.target.value='';};
+
+// Receipt photos
+$('#photoBtn').onclick=()=>$('#photoInput').click();
+$('#photoInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{addPhoto=await compressImage(f);showPhoto('photo',addPhoto);}catch(err){console.error(err);}e.target.value='';};
+$('#photoRm').onclick=()=>{addPhoto=null;showPhoto('photo',null);};
+$('#photoImg').onclick=()=>{if(addPhoto)openLightbox(addPhoto);};
+$('#etPhotoBtn').onclick=()=>$('#etPhotoInput').click();
+$('#etPhotoInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{etPhoto=await compressImage(f);showPhoto('etPhoto',etPhoto);}catch(err){console.error(err);}e.target.value='';};
+$('#etPhotoRm').onclick=()=>{etPhoto=null;showPhoto('etPhoto',null);};
+$('#etPhotoImg').onclick=()=>{if(etPhoto)openLightbox(etPhoto);};
+$('#photoLightbox').onclick=()=>$('#photoLightbox').classList.remove('show');
 
 // Logout
 $('#logoutBtn').onclick=()=>{if(auth)signOut(auth);};

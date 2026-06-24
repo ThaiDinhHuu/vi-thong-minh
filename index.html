@@ -168,6 +168,13 @@
               <div class="field"><label data-i18n="form.date">Ngày</label><input id="dateInput" type="date" /></div>
             </div>
             <div class="field"><label data-i18n="form.wallet">Ví</label><select id="walletInput"></select></div>
+            <div class="field"><label data-i18n="photo.label">Ảnh hóa đơn (tuỳ chọn)</label>
+              <div class="photo-pick">
+                <button type="button" class="btn-ghost photo-btn" id="photoBtn" data-i18n="photo.choose">📷 Chọn ảnh</button>
+                <div class="photo-thumb" id="photoThumb" style="display:none"><img id="photoImg" alt="" /><button type="button" class="photo-rm" id="photoRm">✕</button></div>
+                <input type="file" id="photoInput" accept="image/*" style="display:none" />
+              </div>
+            </div>
             <button class="btn-grad" id="addBtn" data-i18n="form.addBtn">＋ Thêm giao dịch</button>
           </div>
         </div>
@@ -406,6 +413,13 @@
         <div class="field"><label data-i18n="form.date">Ngày</label><input id="etDate" type="date" /></div>
       </div>
       <div class="field" id="etWalletField"><label data-i18n="form.wallet">Ví</label><select id="etWallet"></select></div>
+      <div class="field"><label data-i18n="photo.label">Ảnh hóa đơn (tuỳ chọn)</label>
+        <div class="photo-pick">
+          <button type="button" class="btn-ghost photo-btn" id="etPhotoBtn" data-i18n="photo.choose">📷 Chọn ảnh</button>
+          <div class="photo-thumb" id="etPhotoThumb" style="display:none"><img id="etPhotoImg" alt="" /><button type="button" class="photo-rm" id="etPhotoRm">✕</button></div>
+          <input type="file" id="etPhotoInput" accept="image/*" style="display:none" />
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn-ghost" id="etCancel" data-i18n="btn.cancel">Huỷ</button>
         <button class="btn-grad" id="etSave" style="box-shadow:none" data-i18n="btn.saveChanges">💾 Lưu thay đổi</button>
@@ -532,6 +546,8 @@
       </div>
     </div>
   </div>
+
+  <div class="modal-bg" id="photoLightbox"><img id="lightboxImg" class="lightbox-img" alt="" /></div>
 
   <div class="toast" id="toast"></div>
 
