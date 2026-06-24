@@ -137,6 +137,22 @@
   .seg.budget-period .slider{background:linear-gradient(135deg,var(--accent),var(--accent-2))}
   .seg.budget-period.p2 .slider{transform:translateX(100%)}
 
+  /* ---- Calendar ---- */
+  .cal-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .cal-title{flex:1;text-align:center;font-weight:800;font-size:16px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal-wd{text-align:center;font-size:11px;font-weight:700;color:var(--txt-dim);padding:2px 0 6px}
+  .cal-cell{min-height:62px;border:1px solid var(--glass-brd);border-radius:12px;background:rgba(0,0,0,.18);padding:6px;cursor:pointer;display:flex;flex-direction:column;gap:2px;align-items:flex-start;transition:.15s;font-family:inherit}
+  .cal-cell.empty{border:0;background:transparent;cursor:default}
+  .cal-cell:not(.empty):hover{border-color:var(--accent);transform:translateY(-1px)}
+  .cal-cell.today{box-shadow:inset 0 0 0 1.5px var(--accent-2)}
+  .cal-cell.sel{background:linear-gradient(135deg,rgba(124,92,255,.3),rgba(34,211,238,.16));border-color:var(--accent)}
+  .cal-cell .cd-num{font-size:12.5px;font-weight:700;color:var(--txt)}
+  .cal-cell .cd-exp{font-size:10.5px;font-weight:700;color:var(--red);font-variant-numeric:tabular-nums}
+  .cal-cell .cd-inc{font-size:10.5px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}
+  #calDayList{display:flex;flex-direction:column;gap:10px}
+  @media(max-width:560px){.cal-cell{min-height:52px;padding:4px}.cal-cell .cd-num{font-size:11px}.cal-cell .cd-exp,.cal-cell .cd-inc{font-size:9px}.cal-grid{gap:4px}}
+
   /* ---- Reports ---- */
   .report-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
   .rstat{background:rgba(255,255,255,.04);border:1px solid var(--glass-brd);border-radius:13px;padding:12px 14px}

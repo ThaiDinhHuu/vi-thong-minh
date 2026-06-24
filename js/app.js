@@ -1,6 +1,6 @@
 // ===== Logic giao diện + sự kiện (điểm vào của app) =====
 import { S, state, DEFAULT_CATS, CAT_EMOJIS, GOAL_ICONS, WALLET_ICONS, WALLET_COLORS, COLORS } from './store.js';
-import { t, I18N } from './i18n.js';
+import { t, I18N, wdShortNames } from './i18n.js';
 import { $, $$, fmt, num, escapeHtml, todayISO, isoOf, fmtDate, monthKey, monthLabel, thisMonth,
   dayHeaderInfo, catName, catInfo, walletName, walletBalance, goalSaved, debtBalance, debtOutstanding,
   monthExpense, monthExpenseByCat, applyFilters, toast, show, hide, shake, attachThousands, animateNumber } from './util.js';
@@ -400,6 +400,53 @@ function renderReports(){
     stat(t('report.saveRate'),saveRate==null?'—':saveRate+'%')+
     stat(t('report.topMonth'),exp[maxI]>0?`${labels[maxI]} · ${fmt(exp[maxI])}`:'—');
 }
+
+/* ===== Calendar view ===== */
+let calMonth=thisMonth(), calSelDay=null;
+function calShort(n){n=Math.round(Math.abs(n));if(n>=1e9)return (n/1e9).toFixed(1)+'B';if(n>=1e6)return (n/1e6).toFixed(n>=1e7?0:1)+'M';if(n>=1e3)return Math.round(n/1e3)+'k';return ''+n;}
+function calTxRow(tr){
+  const el=document.createElement('div');el.className='tx';
+  let emo,title,sub,amtCls,amtTxt;
+  if(tr.type==='transfer'){emo='🔄';title=escapeHtml(tr.desc)||t('tx.transfer');sub=`${walletName(tr.fromWallet)} → ${walletName(tr.toWallet)}`;amtCls='tr';amtTxt=fmt(tr.amount);}
+  else{const ci=catInfo(tr.type,tr.cat);emo=ci.emo;title=escapeHtml(tr.desc)||ci.name;sub=ci.name;amtCls=tr.type==='income'?'in':'out';amtTxt=(tr.type==='income'?'+':'−')+fmt(tr.amount);}
+  const wtag=tr.type!=='transfer'&&tr.walletId?`<span class="wtag">${walletName(tr.walletId)}</span>`:'';
+  el.innerHTML=`<div class="emo">${emo}</div><div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div><div class="amt ${amtCls}">${amtTxt}</div><div class="act"><button class="edit" title="${t('tt.edit')}">✎</button><button class="del" title="${t('tt.delete')}">✕</button></div>`;
+  el.querySelector('.edit').onclick=()=>openTxEdit(tr);
+  el.querySelector('.del').onclick=()=>removeTx(tr);
+  return el;
+}
+function renderCalDay(){
+  const panel=$('#calDayPanel');if(!panel)return;
+  if(!calSelDay){panel.style.display='none';return;}
+  panel.style.display='block';
+  const dh=dayHeaderInfo(calSelDay);
+  $('#calDayTitle').textContent=`${dh.tag?dh.tag+' · ':''}${dh.wd} ${dh.dd}`;
+  const items=state.txs.filter(tr=>tr.date===calSelDay);
+  const list=$('#calDayList');list.innerHTML='';
+  if(!items.length){list.innerHTML=`<div class="hint">${t('cal.noTx')}</div>`;return;}
+  items.forEach(tr=>list.appendChild(calTxRow(tr)));
+}
+function renderCalendar(){
+  const grid=$('#calGrid');if(!grid)return;
+  const [y,m]=calMonth.split('-').map(Number);
+  $('#calTitle').textContent=monthLabel(calMonth);
+  const totals={};
+  state.txs.forEach(tr=>{if(monthKey(tr.date)!==calMonth)return;const d=parseInt((tr.date||'').slice(8,10),10);if(!d)return;if(!totals[d])totals[d]={inc:0,exp:0};if(tr.type==='income')totals[d].inc+=tr.amount;else if(tr.type==='expense')totals[d].exp+=tr.amount;});
+  const first=new Date(y,m-1,1).getDay(), firstMon=(first+6)%7, days=new Date(y,m,0).getDate(), today=todayISO();
+  const wd=wdShortNames(), wdMon=[1,2,3,4,5,6,0].map(i=>wd[i]);
+  let html=wdMon.map(w=>`<div class="cal-wd">${w}</div>`).join('');
+  for(let i=0;i<firstMon;i++)html+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=days;d++){
+    const iso=`${calMonth}-${String(d).padStart(2,'0')}`, tot=totals[d];
+    let inner=`<div class="cd-num">${d}</div>`;
+    if(tot){if(tot.exp)inner+=`<div class="cd-exp">−${calShort(tot.exp)}</div>`;if(tot.inc)inner+=`<div class="cd-inc">+${calShort(tot.inc)}</div>`;}
+    html+=`<button class="cal-cell${iso===today?' today':''}${iso===calSelDay?' sel':''}" data-iso="${iso}">${inner}</button>`;
+  }
+  grid.innerHTML=html;
+  grid.querySelectorAll('.cal-cell[data-iso]').forEach(c=>c.onclick=()=>{calSelDay=c.dataset.iso;renderCalendar();});
+  renderCalDay();
+}
+function shiftCalMonth(delta){const [y,m]=calMonth.split('-').map(Number);const d=new Date(y,m-1+delta,1);calMonth=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;calSelDay=null;renderCalendar();}
 
 /* ===== Render: wallets ===== */
 function renderWallets(){
@@ -1038,7 +1085,7 @@ function notifyDueBills(){
   });
 }
 
-function renderAll(){renderStats();renderWallets();renderList();renderChart();renderReports();renderBudgetBanner();renderBillBanner();syncCsels();}
+function renderAll(){renderStats();renderWallets();renderList();renderChart();renderReports();renderCalendar();renderBudgetBanner();renderBillBanner();syncCsels();}
 
 /* ===== CSV export ===== */
 function exportCSV(){
@@ -1197,6 +1244,7 @@ function activateTab(name){
   if(name==='savings')renderSavings();
   if(name==='debts')renderDebts();
   if(name==='bills')renderBills();
+  if(name==='calendar')renderCalendar();
   if(name==='charts'){renderChart();renderReports();requestAnimationFrame(()=>{if(chart)chart.resize();if(barChart)barChart.resize();});}
 }
 $$('#tabs button').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
@@ -1319,6 +1367,10 @@ $('#confirmModal').addEventListener('click',e=>{if(e.target===$('#confirmModal')
 
 // Recurring
 $('#addRecBtn').onclick=addRecurring;
+
+// Calendar
+$('#calPrev').onclick=()=>shiftCalMonth(-1);
+$('#calNext').onclick=()=>shiftCalMonth(1);
 
 // Budget
 $('#saveBudgetBtn').onclick=saveBudgetTotal;

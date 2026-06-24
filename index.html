@@ -59,6 +59,7 @@
       <nav class="tabs" id="tabs">
         <button class="on" data-tab="dash"><span class="tab-ic">📊</span><span class="tab-label" data-i18n="tab.dash">Tổng quan</span></button>
         <button data-tab="charts"><span class="tab-ic">📈</span><span class="tab-label" data-i18n="tab.charts">Biểu đồ</span></button>
+        <button data-tab="calendar"><span class="tab-ic">📅</span><span class="tab-label" data-i18n="tab.calendar">Lịch</span></button>
         <button data-tab="wallets"><span class="tab-ic">💳</span><span class="tab-label" data-i18n="tab.wallets">Ví</span></button>
         <button data-tab="recurring"><span class="tab-ic">🔁</span><span class="tab-label" data-i18n="tab.recurring">Định kỳ</span></button>
         <button data-tab="bills"><span class="tab-ic">🔔</span><span class="tab-label" data-i18n="tab.bills">Hóa đơn</span><span class="tab-badge" id="billBadge"></span></button>
@@ -186,6 +187,22 @@
           <div class="chart-center"><div class="big" id="chartTotal">0₫</div><div class="lbl" data-i18n="chart.totalExpense">tổng chi</div></div>
         </div>
         <div class="legend" id="legend"></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: CALENDAR ===== -->
+    <div class="tab-page" id="page-calendar">
+      <div class="panel glass" style="margin-bottom:18px">
+        <div class="cal-head">
+          <button class="dp-nav" id="calPrev" type="button">‹</button>
+          <div class="cal-title" id="calTitle"></div>
+          <button class="dp-nav" id="calNext" type="button">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="panel glass" id="calDayPanel" style="display:none">
+        <h2><span class="dot"></span> <span id="calDayTitle"></span></h2>
+        <div id="calDayList"></div>
       </div>
     </div>
 
