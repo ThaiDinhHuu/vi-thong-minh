@@ -59,6 +59,7 @@
         <button data-tab="charts"><span class="tab-ic">📈</span><span class="tab-label" data-i18n="tab.charts">Biểu đồ</span></button>
         <button data-tab="wallets"><span class="tab-ic">💳</span><span class="tab-label" data-i18n="tab.wallets">Ví</span></button>
         <button data-tab="recurring"><span class="tab-ic">🔁</span><span class="tab-label" data-i18n="tab.recurring">Định kỳ</span></button>
+        <button data-tab="bills"><span class="tab-ic">🔔</span><span class="tab-label" data-i18n="tab.bills">Hóa đơn</span><span class="tab-badge" id="billBadge"></span></button>
         <button data-tab="budget"><span class="tab-ic">🎯</span><span class="tab-label" data-i18n="tab.budget">Ngân sách</span></button>
         <button data-tab="savings"><span class="tab-ic">🐷</span><span class="tab-label" data-i18n="tab.savings">Tích lũy</span></button>
         <button data-tab="debts"><span class="tab-ic">🤝</span><span class="tab-label" data-i18n="tab.debts">Nợ</span></button>
@@ -106,6 +107,11 @@
         </div>
         <div class="bg-bar" id="bgBar"><div class="fill" id="bgFill"></div></div>
         <div class="bg-meta"><span><span data-i18n="dash.spent">Đã chi</span> <b id="bgSpent">0₫</b></span><span><span data-i18n="dash.limit">Hạn mức</span> <b id="bgLimit">0₫</b></span></div>
+      </div>
+
+      <div class="glass budget-card" id="billBanner" style="margin-bottom:18px;display:none">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px" data-i18n="bills.banner">🔔 Hóa đơn sắp đến hạn</div>
+        <div id="billBannerList"></div>
       </div>
 
       <div class="grid">
@@ -217,6 +223,17 @@
         </div>
         <div class="field"><label data-i18n="form.wallet">Ví</label><select id="recWallet"></select></div>
         <button class="btn-grad" id="addRecBtn" data-i18n="rec.create">＋ Tạo khoản định kỳ</button>
+      </div>
+    </div>
+
+    <!-- ===== TAB: BILLS (reminders) ===== -->
+    <div class="tab-page" id="page-bills">
+      <div class="panel glass">
+        <h2><span class="dot"></span> <span data-i18n="bills.title">Hóa đơn cố định</span>
+          <span class="right"><button class="btn-ghost" id="addBillBtn" style="padding:8px 14px;font-size:13px" data-i18n="bills.add">➕ Thêm hóa đơn</button></span>
+        </h2>
+        <p class="hint" style="margin-bottom:14px" data-i18n-html="bills.hint">Nhắc bạn các hóa đơn sắp đến hạn.</p>
+        <div id="billList"></div>
       </div>
     </div>
 
@@ -413,6 +430,27 @@
       <div class="modal-actions">
         <button class="btn-ghost" id="dmCancel" data-i18n="btn.cancel">Huỷ</button>
         <button class="btn-grad" id="dmConfirm" style="box-shadow:none" data-i18n="btn.confirm">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BILL MODAL (add/edit) ===== -->
+  <div class="modal-bg" id="billModal">
+    <div class="glass modal">
+      <h3 id="billModalTitle" data-i18n="bills.addTitle">➕ Thêm hóa đơn</h3>
+      <div class="field"><label data-i18n="bills.name">Tên hóa đơn</label><input id="billName" maxlength="30" placeholder="VD: Tiền điện" data-i18n-ph="bills.namePh" /></div>
+      <div class="row2">
+        <div class="field"><label data-i18n="form.amount">Số tiền (₫)</label><input id="billAmt" type="text" inputmode="numeric" placeholder="0" autocomplete="off" /></div>
+        <div class="field"><label data-i18n="bills.dueDay">Ngày đến hạn</label><select id="billDay"></select></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label data-i18n="filter.cat">Danh mục</label><select id="billCat"></select></div>
+        <div class="field"><label data-i18n="form.wallet">Ví</label><select id="billWallet"></select></div>
+      </div>
+      <div class="field"><label data-i18n="bills.note">Ghi chú (tuỳ chọn)</label><input id="billNote" maxlength="40" /></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="billCancel" data-i18n="btn.cancel">Huỷ</button>
+        <button class="btn-grad" id="billSave" style="box-shadow:none" data-i18n="btn.saveChanges">💾 Lưu</button>
       </div>
     </div>
   </div>

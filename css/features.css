@@ -130,3 +130,19 @@
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
   @media(max-width:900px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr}}
   @media(max-width:560px){.cats{grid-template-columns:repeat(3,1fr)}.filter-row{grid-template-columns:1fr}}
+
+  /* ---- Bills (reminders) ---- */
+  .tab-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 5px;flex-shrink:0}
+  .app-shell.collapsed .tab-badge{display:none!important}
+  .bill-status{font-weight:700}
+  .bill-status.over{color:var(--red)}.bill-status.soon{color:var(--amber)}.bill-status.ok{color:var(--green)}
+  .item-row.bill .ctl{gap:6px}
+  .item-row .ctl button.pay{border-color:var(--green);color:var(--green)}
+  .item-row .ctl button.pay:hover{background:var(--green);color:#0b1020;border-color:var(--green)}
+  .bill-mini{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px;border-top:1px solid rgba(255,255,255,.06)}
+  .bill-mini:first-child{border-top:0}
+  .bill-mini .bm-emo{font-size:17px}
+  .bill-mini .bm-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+  .bill-mini .bm-amt{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums;color:var(--red)}
+  .bill-mini .bm-pay{background:rgba(52,224,161,.14);border:1px solid var(--green);color:var(--green);font-family:inherit;font-weight:700;font-size:11.5px;padding:5px 10px;border-radius:9px;cursor:pointer;transition:.2s}
+  .bill-mini .bm-pay:hover{background:var(--green);color:#0b1020}

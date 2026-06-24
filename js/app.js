@@ -24,12 +24,13 @@ function applyLang(){
   $$('[data-i18n-html]').forEach(el=>{el.innerHTML=t(el.getAttribute('data-i18n-html'));});
   $$('[data-i18n-ph]').forEach(el=>{el.placeholder=t(el.getAttribute('data-i18n-ph'));});
   buildRecDayOptions();
+  buildBillDayOptions();fillBillCatOptions();
   renderCatFilterOptions();
   buildThemeGrid();
   setAuthTexts();
   renderFormCats();renderRecCats();renderEtCats();
   updateCollapseAllLabel();
-  renderAll();renderRecurring();renderBudget();renderCategoryManage();renderSavings();renderDebts();
+  renderAll();renderRecurring();renderBudget();renderCategoryManage();renderSavings();renderDebts();renderBills();
   syncCsels();
 }
 function setLang(l){S.lang=l;localStorage.setItem('vtm_lang',l);applyLang();}
@@ -49,7 +50,7 @@ else{
       paintUser(user);subscribeAll(user.uid);
     }else{
       unsubs.forEach(u=>u&&u());unsubs=[];recurringBusy=false;walletsLoaded=false;recurringLoaded=false;
-      state.txs=[];state.wallets=[];state.recurring=[];state.goals=[];state.debts=[];state.budget={total:0,perCat:{}};
+      state.txs=[];state.wallets=[];state.recurring=[];state.goals=[];state.debts=[];state.bills=[];state.budget={total:0,perCat:{}};
       renderAll();hide($('#appRoot'));hide($('#loadingCard'));$('#overlay').classList.remove('hide');show($('#authCard'));
     }
   });
@@ -107,6 +108,11 @@ function subscribeAll(uid){
   unsubs.push(onSnapshot(col(uid,'debts'),snap=>{
     state.debts=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
     renderDebts();renderStats();renderList();
+  },err=>console.error(err)));
+
+  unsubs.push(onSnapshot(col(uid,'bills'),snap=>{
+    state.bills=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.day||1)-(b.day||1));
+    renderBills();renderBillBanner();
   },err=>console.error(err)));
 
   unsubs.push(onSnapshot(doc(db,'users',uid,'settings','budget'),snap=>{
@@ -360,7 +366,7 @@ function renderWallets(){
     grid.appendChild(el);
   });
   const opts=state.wallets.map(w=>`<option value="${w.id}">${w.icon} ${escapeHtml(w.name)}</option>`).join('');
-  ['#walletInput','#recWallet','#trFrom','#trTo','#etWallet','#etFrom','#etTo','#gmWallet','#debtWallet','#dmWallet'].forEach(sel=>{
+  ['#walletInput','#recWallet','#trFrom','#trTo','#etWallet','#etFrom','#etTo','#gmWallet','#debtWallet','#dmWallet','#billWallet'].forEach(sel=>{
     const e=$(sel);if(!e)return;const cur=e.value;e.innerHTML=opts;
     if([...e.options].some(o=>o.value===cur))e.value=cur;
   });
@@ -848,7 +854,106 @@ async function doDebtMove(){
   }catch(e){console.error(e);toast(t('toast.transferFail'),'danger');}
 }
 
-function renderAll(){renderStats();renderWallets();renderList();renderChart();renderBudgetBanner();syncCsels();}
+/* ===== Bill reminders (chỉ nhắc, không tự trừ tiền) ===== */
+function billStatus(b){
+  const ym=thisMonth(); const todayD=parseInt(todayISO().slice(8,10),10);
+  return {paid:(b.lastPaid===ym), day:b.day||1, diff:(b.day||1)-todayD};
+}
+function billStatusText(st){
+  if(st.paid)return {txt:t('bills.paid'),cls:'ok'};
+  if(st.diff<0)return {txt:t('bills.overdue',{n:-st.diff}),cls:'over'};
+  if(st.diff===0)return {txt:t('bills.dueToday'),cls:'soon'};
+  return {txt:t('bills.dueIn',{n:st.diff}),cls:st.diff<=3?'soon':''};
+}
+function updateBillBadge(){
+  const n=state.bills.filter(b=>b.active!==false&&(()=>{const st=billStatus(b);return !st.paid&&st.diff<=3;})()).length;
+  const el=$('#billBadge');if(!el)return;el.textContent=n||'';el.style.display=n?'inline-flex':'none';
+}
+function renderBills(){
+  const wrap=$('#billList');if(!wrap)return;
+  updateBillBadge();
+  if(!state.bills.length){wrap.innerHTML=`<div class="hint">${t('bills.empty')}</div>`;return;}
+  const sorted=state.bills.slice().sort((a,b)=>{const sa=billStatus(a),sb=billStatus(b);if(sa.paid!==sb.paid)return sa.paid?1:-1;return sa.diff-sb.diff;});
+  wrap.innerHTML='';
+  sorted.forEach(b=>{
+    const st=billStatus(b),sx=billStatusText(st),ci=catInfo('expense',b.cat);
+    const el=document.createElement('div');el.className='item-row bill';
+    el.innerHTML=`<div class="emo">${ci.emo}</div>
+      <div class="info"><div class="t">${escapeHtml(b.name)}</div>
+        <div class="d"><span class="bill-status ${sx.cls}">${sx.txt}</span> • ${t('bills.dueDayShort',{d:b.day||1})}${b.walletId?' • '+walletName(b.walletId):''}${b.note?' • '+escapeHtml(b.note):''}</div></div>
+      <div class="amt out">−${fmt(b.amount)}</div>
+      <div class="ctl">${st.paid?'':`<button class="pay">${t('bills.pay')}</button>`}<button class="edit">✎</button><button class="del">🗑</button></div>`;
+    const pay=el.querySelector('.pay');if(pay)pay.onclick=()=>payBill(b);
+    el.querySelector('.edit').onclick=()=>openBillEdit(b);
+    el.querySelector('.del').onclick=()=>deleteBill(b);
+    wrap.appendChild(el);
+  });
+}
+function renderBillBanner(){
+  const banner=$('#billBanner');if(!banner)return;
+  updateBillBadge();
+  const due=state.bills.filter(b=>b.active!==false).map(b=>({b,st:billStatus(b)})).filter(o=>!o.st.paid&&o.st.diff<=7).sort((a,b)=>a.st.diff-b.st.diff);
+  if(!due.length){banner.style.display='none';return;}
+  banner.style.display='block';
+  $('#billBannerList').innerHTML=due.map(({b,st})=>{
+    const sx=billStatusText(st),ci=catInfo('expense',b.cat);
+    return `<div class="bill-mini"><span class="bm-emo">${ci.emo}</span><span class="bm-name">${escapeHtml(b.name)}</span><span class="bill-status ${sx.cls}">${sx.txt}</span><span class="bm-amt">−${fmt(b.amount)}</span><button class="bm-pay" data-id="${b.id}">${t('bills.pay')}</button></div>`;
+  }).join('');
+  $('#billBannerList').querySelectorAll('.bm-pay').forEach(btn=>btn.onclick=()=>{const b=state.bills.find(x=>x.id===btn.dataset.id);if(b)payBill(b);});
+}
+async function payBill(b){
+  if(!currentUser)return;
+  try{
+    await addDoc(col(currentUser.uid,'transactions'),{type:'expense',cat:b.cat||'bill',desc:b.name,amount:b.amount,date:todayISO(),walletId:b.walletId||'',createdAt:serverTimestamp()});
+    await updateDoc(doc(db,'users',currentUser.uid,'bills',b.id),{lastPaid:thisMonth()});
+    toast(t('toast.billPaid',{name:b.name}));checkBudgetWarning(todayISO());
+  }catch(e){console.error(e);toast(t('toast.saveFail',{code:e.code}),'danger');}
+}
+let billEditId=null;
+function fillBillCatOptions(){
+  const sel=$('#billCat');if(!sel)return;const cur=sel.value;
+  sel.innerHTML=S.CATS.expense.map(c=>`<option value="${c.id}">${c.emo} ${catName(c)}</option>`).join('');
+  if(cur)sel.value=cur;
+}
+function buildBillDayOptions(){
+  const sel=$('#billDay');if(!sel)return;const cur=sel.value;sel.innerHTML='';
+  for(let d=1;d<=31;d++){const o=document.createElement('option');o.value=d;o.textContent=t('rec.dayLabel',{d});sel.appendChild(o);}
+  if(cur)sel.value=cur;
+}
+function openBillAdd(){
+  billEditId=null;
+  $('#billModalTitle').textContent=t('bills.addTitle');
+  $('#billName').value='';$('#billAmt').value='';$('#billNote').value='';
+  fillBillCatOptions();$('#billDay').value='1';$('#billCat').selectedIndex=0;
+  syncCsels();$('#billModal').classList.add('show');setTimeout(()=>$('#billName').focus(),50);
+}
+function openBillEdit(b){
+  billEditId=b.id;
+  $('#billModalTitle').textContent=t('bills.editTitle');
+  $('#billName').value=b.name;$('#billAmt').value=b.amount?Number(b.amount).toLocaleString('en-US'):'';$('#billNote').value=b.note||'';
+  fillBillCatOptions();$('#billDay').value=String(b.day||1);$('#billCat').value=b.cat||(S.CATS.expense[0]||{}).id;$('#billWallet').value=b.walletId||'';
+  syncCsels();$('#billModal').classList.add('show');
+}
+async function saveBill(){
+  if(!currentUser)return;
+  const name=$('#billName').value.trim();const amount=num($('#billAmt').value);
+  const day=parseInt($('#billDay').value,10)||1;const cat=$('#billCat').value;const walletId=$('#billWallet').value||'';const note=$('#billNote').value.trim();
+  if(!name){toast(t('bills.enterName'),'warn');shake($('#billName'));return;}
+  if(amount<=0){toast(t('toast.invalidAmount'),'warn');shake($('#billAmt'));return;}
+  try{
+    if(billEditId)await updateDoc(doc(db,'users',currentUser.uid,'bills',billEditId),{name,amount,day,cat,walletId,note});
+    else await addDoc(col(currentUser.uid,'bills'),{name,amount,day,cat,walletId,note,active:true,lastPaid:'',order:state.bills.length,createdAt:serverTimestamp()});
+    $('#billModal').classList.remove('show');toast(billEditId?t('toast.billUpdated'):t('toast.billCreated'));
+  }catch(e){console.error(e);toast(t('toast.catSaveFail'),'danger');}
+}
+async function deleteBill(b){
+  const ok=await confirmDialog(t('confirm.deleteBillMsg',{name:b.name}),{title:t('confirm.deleteBillTitle')});
+  if(!ok)return;
+  try{await deleteDoc(doc(db,'users',currentUser.uid,'bills',b.id));toast(t('toast.billDeleted'));}
+  catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+
+function renderAll(){renderStats();renderWallets();renderList();renderChart();renderBudgetBanner();renderBillBanner();syncCsels();}
 
 /* ===== CSV export ===== */
 function exportCSV(){
@@ -924,6 +1029,7 @@ function activateTab(name){
   if(name==='cats')renderCategoryManage();
   if(name==='savings')renderSavings();
   if(name==='debts')renderDebts();
+  if(name==='bills')renderBills();
   if(name==='charts'){renderChart();if(chart)requestAnimationFrame(()=>chart.resize());}
 }
 $$('#tabs button').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
@@ -1074,6 +1180,14 @@ $('#dmCancel').onclick=()=>$('#debtMoveModal').classList.remove('show');
 $('#dmConfirm').onclick=doDebtMove;
 $('#dmAmt').addEventListener('keydown',e=>{if(e.key==='Enter')doDebtMove();});
 $('#debtMoveModal').addEventListener('click',e=>{if(e.target===$('#debtMoveModal'))$('#debtMoveModal').classList.remove('show');});
+
+// Bills (reminders)
+attachThousands($('#billAmt'));
+$('#addBillBtn').onclick=openBillAdd;
+$('#billCancel').onclick=()=>$('#billModal').classList.remove('show');
+$('#billSave').onclick=saveBill;
+$('#billName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#billAmt').focus();});
+$('#billModal').addEventListener('click',e=>{if(e.target===$('#billModal'))$('#billModal').classList.remove('show');});
 
 // Categories
 $('#addExpenseCatBtn').onclick=()=>openCatAdd('expense');
