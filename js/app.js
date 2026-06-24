@@ -1017,8 +1017,9 @@ function renderBills(){
       <div class="info"><div class="t">${escapeHtml(b.name)}</div>
         <div class="d"><span class="bill-status ${sx.cls}">${sx.txt}</span> • ${t('bills.dueDayShort',{d:b.day||1})}${b.walletId?' • '+walletName(b.walletId):''}${b.note?' • '+escapeHtml(b.note):''}</div></div>
       <div class="amt out">−${fmt(b.amount)}</div>
-      <div class="ctl">${st.paid?'':`<button class="pay">${t('bills.pay')}</button>`}<button class="edit">✎</button><button class="del">🗑</button></div>`;
+      <div class="ctl">${st.paid?'':`<button class="pay">${t('bills.pay')}</button><button class="markpaid" title="${t('bills.markPaidTip')}">${t('bills.markPaid')}</button>`}<button class="edit">✎</button><button class="del">🗑</button></div>`;
     const pay=el.querySelector('.pay');if(pay)pay.onclick=()=>payBill(b);
+    const mp=el.querySelector('.markpaid');if(mp)mp.onclick=()=>markBillPaid(b);
     el.querySelector('.edit').onclick=()=>openBillEdit(b);
     el.querySelector('.del').onclick=()=>deleteBill(b);
     wrap.appendChild(el);
@@ -1042,6 +1043,14 @@ async function payBill(b){
     await addDoc(col(currentUser.uid,'transactions'),{type:'expense',cat:b.cat||'bill',desc:b.name,amount:b.amount,date:todayISO(),walletId:b.walletId||'',createdAt:serverTimestamp()});
     await updateDoc(doc(db,'users',currentUser.uid,'bills',b.id),{lastPaid:thisMonth()});
     toast(t('toast.billPaid',{name:b.name}));checkBudgetWarning(todayISO());
+  }catch(e){console.error(e);toast(t('toast.saveFail',{code:e.code}),'danger');}
+}
+// Đánh dấu đã trả tháng này mà KHÔNG ghi khoản chi (đã trả ngoài app) → tháng sau tự nhắc lại
+async function markBillPaid(b){
+  if(!currentUser)return;
+  try{
+    await updateDoc(doc(db,'users',currentUser.uid,'bills',b.id),{lastPaid:thisMonth()});
+    toast(t('toast.billMarked',{name:b.name}));
   }catch(e){console.error(e);toast(t('toast.saveFail',{code:e.code}),'danger');}
 }
 let billEditId=null;
