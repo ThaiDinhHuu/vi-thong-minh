@@ -6,7 +6,7 @@ import { $, $$, fmt, num, escapeHtml, todayISO, isoOf, fmtDate, monthKey, monthL
   monthExpense, monthExpenseByCat, applyFilters, toast, show, hide, shake, attachThousands, animateNumber } from './util.js';
 import { datePicker, enhanceSelect, syncCsels, buildThemeGrid, confirmDialog, resolveConfirm } from './widgets.js';
 import { firebaseConfig, initializeApp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   collection, doc, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc, serverTimestamp } from './firebase.js';
 
@@ -1250,7 +1250,14 @@ function setAuthTexts(){
     ?`${t('auth.hasAccount')} <a id="toggleLink">${t('auth.loginNow')}</a>`
     :`${t('auth.noAccount')} <a id="toggleLink">${t('auth.signupNow')}</a>`;
   $('#toggleLink').onclick=toggleAuthMode;
+  $('#forgotWrap').style.display=signupMode?'none':'';
 }
+$('#forgotLink').onclick=()=>{
+  if(!auth)return;
+  const email=$('#email').value.trim();
+  if(!email){toast(t('auth.enterEmailFirst'),'warn');shake($('#email'));return;}
+  sendPasswordResetEmail(auth,email).then(()=>toast(t('auth.resetSent'))).catch(err=>authError(err));
+};
 function toggleAuthMode(){signupMode=!signupMode;setAuthTexts();$('#authErr').textContent='';}
 $('#toggleLink').onclick=toggleAuthMode;
 $('#authForm').addEventListener('submit',async e=>{
