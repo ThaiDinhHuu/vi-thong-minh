@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Quản lý chi tiêu</title>
+<title>Ledgerly — Quản lý chi tiêu</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <link rel="icon" type="image/png" sizes="any" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%8E%3C/text%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="favicon.svg" />
@@ -42,7 +42,7 @@
       </form>
       <div class="auth-err" id="authErr"></div>
       <div class="auth-toggle" id="authToggle">Chưa có tài khoản? <a id="toggleLink">Đăng ký ngay</a></div>
-      <div class="auth-lang"><a id="authLangLink">🌐 English</a></div>
+      <div class="auth-lang"><div class="lang-seg" id="authLangSeg" title="Ngôn ngữ / Language"><button data-lang="vi">VI</button><button data-lang="en">EN</button></div></div>
     </div>
     <div class="glass auth-card setup app-hidden" id="setupCard">
       <h2 data-i18n="setup.title">⚙️ Cần cấu hình Firebase</h2>
@@ -53,7 +53,7 @@
   <!-- ===== APP ===== -->
   <div class="app-shell app-hidden" id="appRoot">
     <aside class="sidebar">
-      <div class="side-brand"><div class="logo">💎</div><div><h1>Ví Thông Minh</h1><p data-i18n="brand.tagline">Quản lý chi tiêu cá nhân</p></div></div>
+      <div class="side-brand"><div class="logo">💎</div><div><h1>Ledgerly</h1><p data-i18n="brand.tagline">Quản lý chi tiêu cá nhân</p></div></div>
       <nav class="tabs" id="tabs">
         <button class="on" data-tab="dash"><span class="tab-ic">📊</span><span class="tab-label" data-i18n="tab.dash">Tổng quan</span></button>
         <button data-tab="charts"><span class="tab-ic">📈</span><span class="tab-label" data-i18n="tab.charts">Biểu đồ</span></button>

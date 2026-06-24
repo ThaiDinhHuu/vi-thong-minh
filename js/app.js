@@ -18,7 +18,6 @@ let recurringBusy=false, walletsLoaded=false, recurringLoaded=false;
 function applyLang(){
   document.documentElement.lang=S.lang;
   paintLangSeg();
-  const al=$('#authLangLink');if(al)al.textContent=t('auth.switchLang');
   $('#themeBtn').title=t('nav.themeTitle');
   $('#collapseAll').title=t('list.collapseTitle');
   $$('[data-i18n]').forEach(el=>{el.textContent=t(el.getAttribute('data-i18n'));});
@@ -868,7 +867,7 @@ function exportCSV(){
   const csv=[head,...rows].map(r=>r.map(esc).join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
-  a.href=url;a.download=`vi-thong-minh_${todayISO()}.csv`;a.click();
+  a.href=url;a.download=`ledgerly_${todayISO()}.csv`;a.click();
   URL.revokeObjectURL(url);toast(t('toast.exported',{n:txs.length}));
 }
 
@@ -910,9 +909,8 @@ renderFormCats();renderRecCats();renderWalletIcons();renderCatFilterOptions();
 document.querySelectorAll('.field select').forEach(enhanceSelect);syncCsels();
 
 // Language
-function paintLangSeg(){$$('#langSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lang===S.lang));}
-$$('#langSeg button').forEach(b=>b.onclick=()=>{if(b.dataset.lang!==S.lang)setLang(b.dataset.lang);});
-$('#authLangLink').onclick=()=>setLang(S.lang==='vi'?'en':'vi');
+function paintLangSeg(){$$('#langSeg button, #authLangSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lang===S.lang));}
+$$('#langSeg button, #authLangSeg button').forEach(b=>b.onclick=()=>{if(b.dataset.lang!==S.lang)setLang(b.dataset.lang);});
 
 // Tabs
 function activateTab(name){
