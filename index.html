@@ -53,14 +53,16 @@
     <aside class="sidebar">
       <div class="side-brand"><div class="logo">💎</div><div><h1>Ví Thông Minh</h1><p data-i18n="brand.tagline">Quản lý chi tiêu cá nhân</p></div></div>
       <nav class="tabs" id="tabs">
-        <button class="on" data-tab="dash" data-i18n="tab.dash">📊 Tổng quan</button>
-        <button data-tab="wallets" data-i18n="tab.wallets">💳 Ví</button>
-        <button data-tab="recurring" data-i18n="tab.recurring">🔁 Định kỳ</button>
-        <button data-tab="budget" data-i18n="tab.budget">🎯 Ngân sách</button>
-        <button data-tab="savings" data-i18n="tab.savings">🐷 Tích lũy</button>
-        <button data-tab="debts" data-i18n="tab.debts">🤝 Nợ</button>
-        <button data-tab="cats" data-i18n="tab.cats">📂 Danh mục</button>
+        <button class="on" data-tab="dash"><span class="tab-ic">📊</span><span class="tab-label" data-i18n="tab.dash">Tổng quan</span></button>
+        <button data-tab="charts"><span class="tab-ic">📈</span><span class="tab-label" data-i18n="tab.charts">Biểu đồ</span></button>
+        <button data-tab="wallets"><span class="tab-ic">💳</span><span class="tab-label" data-i18n="tab.wallets">Ví</span></button>
+        <button data-tab="recurring"><span class="tab-ic">🔁</span><span class="tab-label" data-i18n="tab.recurring">Định kỳ</span></button>
+        <button data-tab="budget"><span class="tab-ic">🎯</span><span class="tab-label" data-i18n="tab.budget">Ngân sách</span></button>
+        <button data-tab="savings"><span class="tab-ic">🐷</span><span class="tab-label" data-i18n="tab.savings">Tích lũy</span></button>
+        <button data-tab="debts"><span class="tab-ic">🤝</span><span class="tab-label" data-i18n="tab.debts">Nợ</span></button>
+        <button data-tab="cats"><span class="tab-ic">📂</span><span class="tab-label" data-i18n="tab.cats">Danh mục</span></button>
       </nav>
+      <button class="side-collapse" id="sidebarToggle" title="Thu gọn / Mở rộng"><span class="sc-ic">❮</span><span class="sc-label" data-i18n="nav.collapse">Thu gọn</span></button>
     </aside>
     <div class="main">
       <header class="topbar">
@@ -156,15 +158,18 @@
             <div class="field"><label data-i18n="form.wallet">Ví</label><select id="walletInput"></select></div>
             <button class="btn-grad" id="addBtn" data-i18n="form.addBtn">＋ Thêm giao dịch</button>
           </div>
-
-          <div class="panel glass">
-            <h2><span class="dot"></span> <span data-i18n="chart.title">Phân tích chi tiêu</span> <span class="right" id="chartScope" style="color:var(--txt-dim)"></span></h2>
-            <div class="chart-wrap"><canvas id="chart"></canvas>
-              <div class="chart-center"><div class="big" id="chartTotal">0₫</div><div class="lbl" data-i18n="chart.totalExpense">tổng chi</div></div>
-            </div>
-            <div class="legend" id="legend"></div>
-          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: CHARTS ===== -->
+    <div class="tab-page" id="page-charts">
+      <div class="panel glass">
+        <h2><span class="dot"></span> <span data-i18n="chart.title">Phân tích chi tiêu</span> <span class="right" id="chartScope" style="color:var(--txt-dim)"></span></h2>
+        <div class="chart-wrap" style="height:300px"><canvas id="chart"></canvas>
+          <div class="chart-center"><div class="big" id="chartTotal">0₫</div><div class="lbl" data-i18n="chart.totalExpense">tổng chi</div></div>
+        </div>
+        <div class="legend" id="legend"></div>
       </div>
     </div>
 

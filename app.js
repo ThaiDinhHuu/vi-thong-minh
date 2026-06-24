@@ -34,7 +34,7 @@ const I18N={
     'setup.title':'⚙️ Cần cấu hình Firebase',
     'setup.body':'App chưa được kết nối với dự án Firebase. Hãy mở <code>firebase-config.js</code> và dán cấu hình dự án vào (xem <b>HUONG-DAN.md</b>).',
     'brand.tagline':'Quản lý chi tiêu cá nhân','nav.logout':'↩ Đăng xuất','nav.theme':'🎨 Giao diện','nav.themeTitle':'Đổi giao diện',
-    'tab.dash':'📊 Tổng quan','tab.wallets':'💳 Ví','tab.recurring':'🔁 Định kỳ','tab.budget':'🎯 Ngân sách',
+    'tab.dash':'Tổng quan','tab.wallets':'Ví','tab.recurring':'Định kỳ','tab.budget':'Ngân sách','tab.charts':'Biểu đồ','nav.collapse':'Thu gọn',
     'stat.balance':'Tổng số dư','stat.balanceSub':'Trên tất cả các ví','stat.income':'Tổng thu','stat.expense':'Tổng chi',
     'stat.walletDetail':'Chi tiết từng ví','stat.txCount':'{n} giao dịch','stat.walletsN':'{n} ví','stat.stable':'✨ ổn định','stat.negative':'⚠️ âm','stat.noWallets':'Chưa có ví nào.',
     'walletBreak.head':'💰 Số dư theo ví',
@@ -79,14 +79,14 @@ const I18N={
     'confirm.deleteWalletTitle':'🗑️ Xoá ví','confirm.deleteWalletMsg':'Xoá ví "{name}"? Giao dịch cũ vẫn còn nhưng sẽ không thuộc ví nào.',
     'confirm.deleteRecTitle':'🗑️ Xoá định kỳ','confirm.deleteRecMsg':'Xoá khoản định kỳ này?',
     'csv.date':'Ngày','csv.type':'Loại','csv.cat':'Danh mục','csv.desc':'Mô tả','csv.wallet':'Ví / Chuyển','csv.amount':'Số tiền',
-    'tab.cats':'📂 Danh mục',
+    'tab.cats':'Danh mục',
     'cats.expenseTitle':'Danh mục chi tiêu','cats.incomeTitle':'Danh mục thu nhập','cats.add':'➕ Thêm danh mục',
     'cats.addTitle':'➕ Thêm danh mục','cats.editTitle':'✏️ Sửa danh mục','cats.name':'Tên danh mục','cats.namePh':'VD: Cà phê','cats.icon':'Biểu tượng',
     'cats.empty':'Chưa có danh mục nào.','cats.enterName':'⚠️ Nhập tên danh mục',
     'toast.catCreated':'📂 Đã thêm danh mục','toast.catUpdated':'💾 Đã cập nhật danh mục','toast.catSaveFail':'⚠️ Lưu thất bại','toast.catDeleted':'🗑️ Đã xoá danh mục',
     'confirm.deleteCatTitle':'🗑️ Xoá danh mục','confirm.deleteCatMsg':'Xoá danh mục "{name}"? Giao dịch cũ vẫn giữ nhưng sẽ hiện là "Khác".',
     'confirm.deleteTxTitle':'🗑️ Xoá giao dịch','confirm.deleteTxMsg':'Xoá giao dịch "{name}"? Hành động không thể hoàn tác.',
-    'tab.savings':'🐷 Tích lũy','btn.confirm':'Xác nhận',
+    'tab.savings':'Tích lũy','btn.confirm':'Xác nhận',
     'savings.title':'Hũ tích lũy','savings.add':'➕ Tạo hũ mới','savings.empty':'Chưa có hũ nào. Tạo hũ đầu tiên!',
     'savings.hint':'Đặt mục tiêu và nạp tiền từ ví vào hũ để theo dõi tiến độ. Tiền trong hũ vẫn là tài sản của bạn.',
     'savings.addTitle':'➕ Tạo hũ tích lũy','savings.editTitle':'✏️ Sửa hũ','savings.name':'Tên mục tiêu','savings.namePh':'VD: Mua xe máy','savings.target':'Số tiền mục tiêu (₫)','savings.icon':'Biểu tượng',
@@ -96,7 +96,7 @@ const I18N={
     'toast.goalCreated':'🐷 Đã tạo hũ','toast.goalUpdated':'💾 Đã cập nhật hũ','toast.goalDeleted':'🗑️ Đã xoá hũ',
     'toast.deposited':'🐷 Đã nạp {amt}','toast.withdrawn':'💸 Đã rút {amt}','toast.pickWallet':'⚠️ Chọn ví','toast.exceedSaved':'⚠️ Vượt quá số dư trong hũ','toast.need1Wallet':'⚠️ Cần ít nhất 1 ví',
     'confirm.deleteGoalTitle':'🗑️ Xoá hũ','confirm.deleteGoalMsg':'Xoá hũ "{name}"?','confirm.deleteGoalMoneyMsg':'Xoá hũ "{name}"? Số tiền {amt} sẽ được chuyển về ví {wallet}.',
-    'tab.debts':'🤝 Nợ',
+    'tab.debts':'Nợ',
     'debts.payableTitle':'Phải trả (tôi đi vay)','debts.receivableTitle':'Phải thu (tôi cho vay)','debts.addBorrow':'➕ Thêm khoản vay','debts.addLend':'➕ Thêm khoản cho vay','debts.empty':'Chưa có khoản nào.',
     'debts.addTitle':'➕ Thêm khoản nợ','debts.editTitle':'✏️ Sửa khoản nợ','debts.iBorrow':'Tôi đi vay','debts.iLend':'Tôi cho vay','debts.person':'Tên người','debts.personPh':'VD: Anh Nam','debts.note':'Ghi chú (tuỳ chọn)',
     'debts.intoWallet':'Nhận vào ví','debts.outWallet':'Chi từ ví','debts.fromWallet':'Từ ví',
@@ -122,7 +122,7 @@ const I18N={
     'setup.title':'⚙️ Firebase setup required',
     'setup.body':'The app is not connected to your Firebase project yet. Open <code>firebase-config.js</code> and paste your project config (see <b>HUONG-DAN.md</b>).',
     'brand.tagline':'Personal expense manager','nav.logout':'↩ Sign out','nav.theme':'🎨 Theme','nav.themeTitle':'Change theme',
-    'tab.dash':'📊 Overview','tab.wallets':'💳 Wallets','tab.recurring':'🔁 Recurring','tab.budget':'🎯 Budget',
+    'tab.dash':'Overview','tab.wallets':'Wallets','tab.recurring':'Recurring','tab.budget':'Budget','tab.charts':'Charts','nav.collapse':'Collapse',
     'stat.balance':'Total balance','stat.balanceSub':'Across all wallets','stat.income':'Total income','stat.expense':'Total expense',
     'stat.walletDetail':'Per-wallet detail','stat.txCount':'{n} transactions','stat.walletsN':'{n} wallets','stat.stable':'✨ stable','stat.negative':'⚠️ negative','stat.noWallets':'No wallets yet.',
     'walletBreak.head':'💰 Balance by wallet',
@@ -167,14 +167,14 @@ const I18N={
     'confirm.deleteWalletTitle':'🗑️ Delete wallet','confirm.deleteWalletMsg':'Delete wallet "{name}"? Past transactions remain but won\'t belong to any wallet.',
     'confirm.deleteRecTitle':'🗑️ Delete recurring','confirm.deleteRecMsg':'Delete this recurring transaction?',
     'csv.date':'Date','csv.type':'Type','csv.cat':'Category','csv.desc':'Description','csv.wallet':'Wallet / Transfer','csv.amount':'Amount',
-    'tab.cats':'📂 Categories',
+    'tab.cats':'Categories',
     'cats.expenseTitle':'Expense categories','cats.incomeTitle':'Income categories','cats.add':'➕ Add category',
     'cats.addTitle':'➕ Add category','cats.editTitle':'✏️ Edit category','cats.name':'Category name','cats.namePh':'e.g. Coffee','cats.icon':'Icon',
     'cats.empty':'No categories yet.','cats.enterName':'⚠️ Enter a category name',
     'toast.catCreated':'📂 Category added','toast.catUpdated':'💾 Category updated','toast.catSaveFail':'⚠️ Save failed','toast.catDeleted':'🗑️ Category deleted',
     'confirm.deleteCatTitle':'🗑️ Delete category','confirm.deleteCatMsg':'Delete category "{name}"? Past transactions are kept but will show as "Other".',
     'confirm.deleteTxTitle':'🗑️ Delete transaction','confirm.deleteTxMsg':'Delete transaction "{name}"? This cannot be undone.',
-    'tab.savings':'🐷 Savings','btn.confirm':'Confirm',
+    'tab.savings':'Savings','btn.confirm':'Confirm',
     'savings.title':'Savings goals','savings.add':'➕ New goal','savings.empty':'No goals yet. Create your first one!',
     'savings.hint':'Set a goal and move money from your wallets into the jar to track progress. Money in jars is still your asset.',
     'savings.addTitle':'➕ New savings goal','savings.editTitle':'✏️ Edit goal','savings.name':'Goal name','savings.namePh':'e.g. Buy a motorbike','savings.target':'Target amount (₫)','savings.icon':'Icon',
@@ -184,7 +184,7 @@ const I18N={
     'toast.goalCreated':'🐷 Goal created','toast.goalUpdated':'💾 Goal updated','toast.goalDeleted':'🗑️ Goal deleted',
     'toast.deposited':'🐷 Deposited {amt}','toast.withdrawn':'💸 Withdrew {amt}','toast.pickWallet':'⚠️ Pick a wallet','toast.exceedSaved':'⚠️ Exceeds jar balance','toast.need1Wallet':'⚠️ Need at least 1 wallet',
     'confirm.deleteGoalTitle':'🗑️ Delete goal','confirm.deleteGoalMsg':'Delete goal "{name}"?','confirm.deleteGoalMoneyMsg':'Delete goal "{name}"? {amt} will be returned to {wallet}.',
-    'tab.debts':'🤝 Debts',
+    'tab.debts':'Debts',
     'debts.payableTitle':'Payable (I borrowed)','debts.receivableTitle':'Receivable (I lent)','debts.addBorrow':'➕ Add borrowing','debts.addLend':'➕ Add lending','debts.empty':'Nothing here yet.',
     'debts.addTitle':'➕ Add debt','debts.editTitle':'✏️ Edit debt','debts.iBorrow':'I borrowed','debts.iLend':'I lent','debts.person':'Person','debts.personPh':'e.g. Nam','debts.note':'Note (optional)',
     'debts.intoWallet':'Receive into wallet','debts.outWallet':'Pay from wallet','debts.fromWallet':'From wallet',
@@ -1389,10 +1389,19 @@ function activateTab(name){
   if(name==='cats')renderCategoryManage();
   if(name==='savings')renderSavings();
   if(name==='debts')renderDebts();
+  if(name==='charts'){renderChart();if(chart)requestAnimationFrame(()=>chart.resize());}
 }
 $$('#tabs button').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
 // Khôi phục tab đã xem trước khi F5
 activateTab(localStorage.getItem('vtm_tab')||'dash');
+
+// Sidebar collapse (desktop)
+$('#appRoot').classList.toggle('collapsed',localStorage.getItem('vtm_sidebar')==='collapsed');
+$('#sidebarToggle').onclick=()=>{
+  const c=$('#appRoot').classList.toggle('collapsed');
+  localStorage.setItem('vtm_sidebar',c?'collapsed':'expanded');
+  if(chart)chart.resize();
+};
 
 // Form type segment
 $('#seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{

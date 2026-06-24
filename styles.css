@@ -63,14 +63,30 @@
   .tabs button{width:100%;border:0;background:transparent;color:var(--txt-dim);padding:12px 14px;border-radius:13px;cursor:pointer;font-family:inherit;font-weight:700;font-size:14px;transition:.2s;display:flex;align-items:center;justify-content:flex-start;gap:11px;white-space:nowrap}
   .tabs button:hover{background:rgba(255,255,255,.05);color:#fff}
   .tabs button.on{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 8px 22px -10px var(--accent)}
+  .tab-ic{font-size:18px;width:22px;text-align:center;flex-shrink:0;line-height:1}
+  .side-collapse{margin-top:auto;display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;color:var(--txt-dim);padding:12px 14px;border-radius:13px;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;transition:.2s;justify-content:flex-start}
+  .side-collapse:hover{background:rgba(255,255,255,.05);color:#fff}
+  .side-collapse .sc-ic{font-size:13px;width:22px;text-align:center;flex-shrink:0;display:inline-block;transition:transform .25s}
+  /* collapsed (desktop) */
+  .app-shell.collapsed .sidebar{width:76px;padding:22px 10px}
+  .app-shell.collapsed .side-brand{justify-content:center;padding:4px 0 14px}
+  .app-shell.collapsed .side-brand>div:last-child{display:none}
+  .app-shell.collapsed .tabs button{justify-content:center;padding:12px 0;gap:0}
+  .app-shell.collapsed .tab-label{display:none}
+  .app-shell.collapsed .side-collapse{justify-content:center;padding:12px 0;gap:0}
+  .app-shell.collapsed .side-collapse .sc-label{display:none}
+  .app-shell.collapsed .side-collapse .sc-ic{transform:rotate(180deg)}
   @media(max-width:860px){
     .app-shell{flex-direction:column;min-height:auto}
-    .sidebar{width:auto;height:auto;position:static;flex-direction:column;padding:16px 16px 0;overflow:visible}
-    .side-brand{padding:0 2px 12px;margin-bottom:6px}
+    .sidebar,.app-shell.collapsed .sidebar{width:auto;height:auto;position:static;flex-direction:column;padding:16px 16px 0;overflow:visible}
+    .side-brand,.app-shell.collapsed .side-brand{padding:0 2px 12px;margin-bottom:6px;justify-content:flex-start}
+    .app-shell.collapsed .side-brand>div:last-child{display:block}
     .tabs{flex-direction:row;overflow-x:auto;gap:6px;margin-top:0;padding-bottom:6px}
-    .tabs button{width:auto;flex:0 0 auto;padding:9px 14px;font-size:13px;border-radius:12px;background:rgba(0,0,0,.22)}
+    .tabs button,.app-shell.collapsed .tabs button{width:auto;flex:0 0 auto;padding:9px 14px;font-size:13px;border-radius:12px;background:rgba(0,0,0,.22);justify-content:flex-start;gap:7px}
     .tabs button.on{background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+    .app-shell.collapsed .tab-label{display:inline}
     .tabs::-webkit-scrollbar{height:0}
+    .side-collapse{display:none}
     .main{padding:6px 16px 50px}
     .topbar{justify-content:flex-start;margin-bottom:14px}
   }
