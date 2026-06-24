@@ -4,7 +4,7 @@ import { t, I18N, wdShortNames } from './i18n.js';
 import { $, $$, fmt, num, escapeHtml, todayISO, isoOf, fmtDate, monthKey, monthLabel, thisMonth,
   dayHeaderInfo, catName, catInfo, walletName, walletBalance, goalSaved, debtBalance, debtOutstanding,
   monthExpense, monthExpenseByCat, applyFilters, toast, show, hide, shake, attachThousands, animateNumber } from './util.js';
-import { datePicker, enhanceSelect, syncCsels, buildThemeGrid, confirmDialog, resolveConfirm } from './widgets.js';
+import { datePicker, enhanceSelect, syncCsels, buildThemeGrid, confirmDialog, resolveConfirm, circleReveal } from './widgets.js';
 import { firebaseConfig, initializeApp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
@@ -1262,20 +1262,7 @@ function applyMode(m){
 applyMode(document.documentElement.dataset.mode||'light');
 $('#modeBtn').onclick=()=>{
   const next=document.documentElement.dataset.mode==='dark'?'light':'dark';
-  const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(!document.startViewTransition || reduce){applyMode(next);return;}
-  const r=$('#modeBtn').getBoundingClientRect();
-  const x=r.left+r.width/2, y=r.top+r.height/2;
-  const end=Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));
-  document.documentElement.classList.add('mode-anim');
-  const vt=document.startViewTransition(()=>applyMode(next));
-  vt.ready.then(()=>{
-    document.documentElement.animate(
-      {clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${end}px at ${x}px ${y}px)`]},
-      {duration:1100,easing:'cubic-bezier(.4,0,.2,1)',pseudoElement:'::view-transition-new(root)'}
-    );
-  });
-  vt.finished.finally(()=>document.documentElement.classList.remove('mode-anim'));
+  circleReveal($('#modeBtn'),()=>applyMode(next),{expand:next==='dark',duration:1500});
 };
 $('#themeBtn').onclick=e=>{e.stopPropagation();const open=$('#themePop').classList.toggle('open');if(open){buildThemeGrid();placeThemePop();}};
 document.addEventListener('click',e=>{const p=$('#themePop'),b=$('#themeBtn');if(p.classList.contains('open')&&!p.contains(e.target)&&!b.contains(e.target))closeThemePop();});

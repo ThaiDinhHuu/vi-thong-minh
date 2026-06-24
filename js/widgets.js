@@ -109,12 +109,33 @@ document.addEventListener('click',()=>closeAllCsel());
 /* ----- Theme màu ----- */
 const themeName=th=>t('theme.'+th.key);
 export const currentTheme=()=>document.documentElement.dataset.theme||'';
+// Lan toả hình tròn từ một nút: expand=true → mọc ra; false → co vào nút
+export function circleReveal(originEl,changeFn,opts={}){
+  const {expand=true,duration=1100}=opts;
+  const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!document.startViewTransition||reduce||!originEl){changeFn();return;}
+  const r=originEl.getBoundingClientRect();
+  const x=r.left+r.width/2, y=r.top+r.height/2;
+  const end=Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));
+  const root=document.documentElement;
+  root.classList.add('mode-anim',expand?'mode-expand':'mode-collapse');
+  const vt=document.startViewTransition(changeFn);
+  vt.ready.then(()=>{
+    const c0=`circle(0px at ${x}px ${y}px)`, c1=`circle(${end}px at ${x}px ${y}px)`;
+    root.animate({clipPath:expand?[c0,c1]:[c1,c0]},
+      {duration,easing:'cubic-bezier(.4,0,.2,1)',pseudoElement:expand?'::view-transition-new(root)':'::view-transition-old(root)'});
+  });
+  vt.finished.finally(()=>root.classList.remove('mode-anim','mode-expand','mode-collapse'));
+}
 export function applyTheme(key){
-  if(key)document.documentElement.dataset.theme=key;else delete document.documentElement.dataset.theme;
-  try{localStorage.setItem('vtm_theme',key);}catch(e){}
-  const tc=document.querySelector('meta[name=theme-color]');
-  if(tc)tc.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--bg-0').trim()||'#0b1020');
-  buildThemeGrid();
+  const doChange=()=>{
+    if(key)document.documentElement.dataset.theme=key;else delete document.documentElement.dataset.theme;
+    try{localStorage.setItem('vtm_theme',key);}catch(e){}
+    const tc=document.querySelector('meta[name=theme-color]');
+    if(tc)tc.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--bg-0').trim()||'#0b1020');
+    buildThemeGrid();
+  };
+  circleReveal(document.getElementById('themeBtn'),doChange,{expand:true,duration:1100});
 }
 export function buildThemeGrid(){
   const grid=$('#themeGrid');if(!grid)return;const cur=currentTheme();grid.innerHTML='';

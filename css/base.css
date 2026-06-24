@@ -35,10 +35,11 @@
     --field:#2B2930; --field-2:#36343C; --track:#48464E;
     --row:#26242B; --hover:color-mix(in srgb,var(--accent) 18%,transparent);
   }
-  /* ---- Đổi Sáng/Tối: lan toả hình tròn mềm từ nút bấm (JS lái bán kính) ---- */
+  /* ---- Lan toả hình tròn mềm từ nút bấm (JS lái bán kính) ---- */
   html.mode-anim::view-transition-old(root),
   html.mode-anim::view-transition-new(root){animation:none;mix-blend-mode:normal}
-  html.mode-anim::view-transition-new(root){z-index:1}
+  html.mode-expand::view-transition-new(root){z-index:1}    /* lan ra: lớp mới đè lên */
+  html.mode-collapse::view-transition-old(root){z-index:1}  /* co vào: lớp cũ co lại lộ lớp mới */
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--txt);background:var(--bg-0);overflow-x:hidden;min-height:100vh;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:-.1px}
