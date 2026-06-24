@@ -79,6 +79,12 @@ const I18N={
     'confirm.deleteWalletTitle':'🗑️ Xoá ví','confirm.deleteWalletMsg':'Xoá ví "{name}"? Giao dịch cũ vẫn còn nhưng sẽ không thuộc ví nào.',
     'confirm.deleteRecTitle':'🗑️ Xoá định kỳ','confirm.deleteRecMsg':'Xoá khoản định kỳ này?',
     'csv.date':'Ngày','csv.type':'Loại','csv.cat':'Danh mục','csv.desc':'Mô tả','csv.wallet':'Ví / Chuyển','csv.amount':'Số tiền',
+    'tab.cats':'📂 Danh mục',
+    'cats.expenseTitle':'Danh mục chi tiêu','cats.incomeTitle':'Danh mục thu nhập','cats.add':'➕ Thêm danh mục',
+    'cats.addTitle':'➕ Thêm danh mục','cats.editTitle':'✏️ Sửa danh mục','cats.name':'Tên danh mục','cats.namePh':'VD: Cà phê','cats.icon':'Biểu tượng',
+    'cats.empty':'Chưa có danh mục nào.','cats.enterName':'⚠️ Nhập tên danh mục',
+    'toast.catCreated':'📂 Đã thêm danh mục','toast.catUpdated':'💾 Đã cập nhật danh mục','toast.catSaveFail':'⚠️ Lưu thất bại','toast.catDeleted':'🗑️ Đã xoá danh mục',
+    'confirm.deleteCatTitle':'🗑️ Xoá danh mục','confirm.deleteCatMsg':'Xoá danh mục "{name}"? Giao dịch cũ vẫn giữ nhưng sẽ hiện là "Khác".',
     'err.generic':'Đã xảy ra lỗi',
     'err.auth/invalid-email':'Email không hợp lệ','err.auth/user-not-found':'Tài khoản không tồn tại','err.auth/wrong-password':'Sai mật khẩu',
     'err.auth/invalid-credential':'Email hoặc mật khẩu không đúng','err.auth/email-already-in-use':'Email đã được đăng ký','err.auth/weak-password':'Mật khẩu quá yếu (tối thiểu 6 ký tự)',
@@ -141,6 +147,12 @@ const I18N={
     'confirm.deleteWalletTitle':'🗑️ Delete wallet','confirm.deleteWalletMsg':'Delete wallet "{name}"? Past transactions remain but won\'t belong to any wallet.',
     'confirm.deleteRecTitle':'🗑️ Delete recurring','confirm.deleteRecMsg':'Delete this recurring transaction?',
     'csv.date':'Date','csv.type':'Type','csv.cat':'Category','csv.desc':'Description','csv.wallet':'Wallet / Transfer','csv.amount':'Amount',
+    'tab.cats':'📂 Categories',
+    'cats.expenseTitle':'Expense categories','cats.incomeTitle':'Income categories','cats.add':'➕ Add category',
+    'cats.addTitle':'➕ Add category','cats.editTitle':'✏️ Edit category','cats.name':'Category name','cats.namePh':'e.g. Coffee','cats.icon':'Icon',
+    'cats.empty':'No categories yet.','cats.enterName':'⚠️ Enter a category name',
+    'toast.catCreated':'📂 Category added','toast.catUpdated':'💾 Category updated','toast.catSaveFail':'⚠️ Save failed','toast.catDeleted':'🗑️ Category deleted',
+    'confirm.deleteCatTitle':'🗑️ Delete category','confirm.deleteCatMsg':'Delete category "{name}"? Past transactions are kept but will show as "Other".',
     'err.generic':'Something went wrong',
     'err.auth/invalid-email':'Invalid email','err.auth/user-not-found':'Account not found','err.auth/wrong-password':'Wrong password',
     'err.auth/invalid-credential':'Email or password is incorrect','err.auth/email-already-in-use':'Email already registered','err.auth/weak-password':'Password too weak (min 6 characters)',
@@ -154,7 +166,7 @@ function t(key,p){
 }
 
 /* ===== Static data ===== */
-const CATS={
+const DEFAULT_CATS={
   expense:[
     {id:'food',emo:'🍜',vi:'Ăn uống',en:'Food & Drink'},{id:'shop',emo:'🛍️',vi:'Mua sắm',en:'Shopping'},
     {id:'transport',emo:'🚕',vi:'Đi lại',en:'Transport'},{id:'home',emo:'🏠',vi:'Nhà cửa',en:'Housing'},
@@ -168,6 +180,9 @@ const CATS={
     {id:'freelance',emo:'💻',vi:'Freelance',en:'Freelance'},{id:'other',emo:'📦',vi:'Khác',en:'Other'},
   ]
 };
+// Live categories (Firebase-backed). Initialized from defaults so UI works before sync.
+let CATS={expense:DEFAULT_CATS.expense.map(c=>({...c})),income:DEFAULT_CATS.income.map(c=>({...c}))};
+const CAT_EMOJIS=['🍜','🍔','🍕','🍳','☕','🍰','🍺','🍱','🛒','🛍️','👕','👟','💄','🚕','🚌','⛽','🚗','✈️','🏠','🛋️','🔧','💡','🎮','🎬','🎵','🎤','🎁','📚','✏️','🎓','💊','🏥','💪','🐶','✂️','🧾','📱','💻','🌐','🔌','💰','💵','🏦','💳','📈','📊','🏖️','🎉','❤️','🙏','📦','⚽','🍎','🌸'];
 const WALLET_ICONS=['💵','🏦','💳','📱','🪙','💰','🏧','🐷'];
 const WALLET_COLORS={'💵':'#34e0a1','🏦':'#60a5fa','💳':'#ff6b8b','📱':'#a78bfa','🪙':'#ffb86b','💰':'#22d3ee','🏧':'#7c5cff','🐷':'#ff6bcb'};
 const COLORS=['#7c5cff','#22d3ee','#34e0a1','#ffb86b','#ff6b8b','#ff6bcb','#a78bfa','#60a5fa','#f472b6'];
@@ -188,7 +203,8 @@ const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
 const fmt=n=>new Intl.NumberFormat('vi-VN').format(Math.round(n))+'₫';
 const num=s=>parseFloat(String(s).replace(/[^\d]/g,''))||0;
-const catName=c=>c?(c[lang]||c.vi):(lang==='en'?'Other':'Khác');
+const catFallback=()=>lang==='en'?'Other':'Khác';
+const catName=c=>{if(!c)return catFallback();return (lang==='en'?(c.en||c.name||c.vi):(c.vi||c.name||c.en))||catFallback();};
 const catInfo=(ty,id)=>{const c=(CATS[ty]||[]).find(x=>x.id===id);return c?{emo:c.emo,name:catName(c)}:{emo:'📦',name:(lang==='en'?'Other':'Khác')};};
 const todayISO=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);};
 const isoOf=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -373,7 +389,7 @@ function applyLang(){
   setAuthTexts();
   renderFormCats();renderRecCats();renderEtCats();
   updateCollapseAllLabel();
-  renderAll();renderRecurring();renderBudget();
+  renderAll();renderRecurring();renderBudget();renderCategoryManage();
   syncCsels();
 }
 function setLang(l){lang=l;localStorage.setItem('vtm_lang',l);applyLang();}
@@ -412,6 +428,15 @@ function paintUser(u){
 function col(uid,name){return collection(db,'users',uid,name);}
 function subscribeAll(uid){
   unsubs.forEach(u=>u&&u());unsubs=[];
+  unsubs.push(onSnapshot(col(uid,'categories'),snap=>{
+    if(!snap.size && !localStorage.getItem('seeded_cats_'+uid)){seedCats(uid);return;}
+    const ex=[],inc=[];
+    snap.docs.forEach(d=>{const data=d.data();const c={docId:d.id,...data,id:data.cid||d.id};(c.type==='income'?inc:ex).push(c);});
+    ex.sort((a,b)=>(a.order||0)-(b.order||0));inc.sort((a,b)=>(a.order||0)-(b.order||0));
+    CATS={expense:ex,income:inc};
+    normalizeCatSelections();
+    refreshCatUI();
+  },err=>console.error(err)));
   unsubs.push(onSnapshot(col(uid,'wallets'),snap=>{
     state.wallets=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
     if(!snap.size && !localStorage.getItem('seeded_wallets_'+uid)){seedWallets(uid);}
@@ -444,6 +469,26 @@ async function seedWallets(uid){
     ?[{name:'Cash',icon:'💵',initial:0,order:0},{name:'ATM',icon:'🏦',initial:0,order:1},{name:'Credit Card',icon:'💳',initial:0,order:2}]
     :[{name:'Tiền mặt',icon:'💵',initial:0,order:0},{name:'ATM',icon:'🏦',initial:0,order:1},{name:'Thẻ tín dụng',icon:'💳',initial:0,order:2}];
   for(const w of defs){try{await addDoc(col(uid,'wallets'),{...w,createdAt:serverTimestamp()});}catch(e){console.error(e);}}
+}
+
+/* ===== Categories: seed defaults + helpers ===== */
+async function seedCats(uid){
+  localStorage.setItem('seeded_cats_'+uid,'1');
+  let order=0;
+  for(const c of DEFAULT_CATS.expense){try{await setDoc(doc(db,'users',uid,'categories','expense_'+c.id),{type:'expense',cid:c.id,vi:c.vi,en:c.en,emo:c.emo,order:order++});}catch(e){console.error(e);}}
+  order=0;
+  for(const c of DEFAULT_CATS.income){try{await setDoc(doc(db,'users',uid,'categories','income_'+c.id),{type:'income',cid:c.id,vi:c.vi,en:c.en,emo:c.emo,order:order++});}catch(e){console.error(e);}}
+}
+function normalizeCatSelections(){
+  const ensure=(type,cur)=>{const list=CATS[type]||[];return list.some(c=>c.id===cur)?cur:(list[0]?list[0].id:'');};
+  state.cat=ensure(state.txType,state.cat);
+  state.recCat=ensure(state.recType,state.recCat);
+  etCat=ensure(etType,etCat);
+}
+function refreshCatUI(){
+  renderFormCats();renderRecCats();renderEtCats();
+  renderCatFilterOptions();renderBudget();renderCategoryManage();
+  renderList();renderChart();syncCsels();
 }
 
 /* ===== Recurring auto-run ===== */
@@ -744,7 +789,7 @@ function openTxEdit(tr){
     $('#etFrom').value=tr.fromWallet||'';$('#etTo').value=tr.toWallet||'';
   }else{
     etType=(tr.type==='income')?'income':'expense';
-    etCat=tr.cat||CATS[etType][0].id;
+    etCat=tr.cat||(CATS[etType][0]||{}).id||'';
     $('#etSeg').classList.toggle('exp',etType==='income');
     $('#etSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===etType));
     renderEtCats();
@@ -897,6 +942,74 @@ function renderCatFilterOptions(){
   sel.innerHTML=`<option value="all">${t('filter.allCats')}</option>`+all.map(c=>`<option value="${c.id}">${c.emo} ${catName(c)}</option>`).join('');
   sel.value=cur||'all';
 }
+
+/* ===== Category management (add/edit/delete) ===== */
+let catModalType='expense', catEditDocId=null, catEmoji='🍜';
+function renderCatEmojis(){
+  const wrap=$('#catEmojis');if(!wrap)return;wrap.innerHTML='';
+  CAT_EMOJIS.forEach(ic=>{const el=document.createElement('div');el.className='cat'+(ic===catEmoji?' sel':'');
+    el.innerHTML=`<span class="emo">${ic}</span>`;el.onclick=()=>{catEmoji=ic;renderCatEmojis();};wrap.appendChild(el);});
+}
+function setCatModalType(type){
+  catModalType=type;
+  $('#catSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===type));
+  $('#catSeg').classList.toggle('exp',type==='income');
+}
+function openCatAdd(type){
+  catEditDocId=null;catEmoji=CAT_EMOJIS[0];
+  $('#catModalTitle').textContent=t('cats.addTitle');
+  $('#catNameInput').value='';$('#catSeg').style.display='';
+  setCatModalType(type);renderCatEmojis();
+  $('#catModal').classList.add('show');
+  setTimeout(()=>$('#catNameInput').focus(),50);
+}
+function openCatEdit(c){
+  catEditDocId=c.docId;catEmoji=c.emo||CAT_EMOJIS[0];
+  $('#catModalTitle').textContent=t('cats.editTitle');
+  $('#catNameInput').value=catName(c);$('#catSeg').style.display='none';
+  setCatModalType(c.type);renderCatEmojis();
+  $('#catModal').classList.add('show');
+}
+async function saveCat(){
+  if(!currentUser)return;
+  const name=$('#catNameInput').value.trim();
+  if(!name){toast(t('cats.enterName'),'warn');shake($('#catNameInput'));return;}
+  try{
+    if(catEditDocId){
+      await updateDoc(doc(db,'users',currentUser.uid,'categories',catEditDocId),{name,vi:name,en:name,emo:catEmoji});
+      toast(t('toast.catUpdated'));
+    }else{
+      const cid='c'+Date.now().toString(36)+Math.floor(Math.random()*1000);
+      const order=(CATS[catModalType]||[]).length;
+      await addDoc(col(currentUser.uid,'categories'),{type:catModalType,cid,name,emo:catEmoji,order,createdAt:serverTimestamp()});
+      toast(t('toast.catCreated'));
+    }
+    $('#catModal').classList.remove('show');
+  }catch(e){console.error(e);toast(t('toast.catSaveFail'),'danger');}
+}
+async function deleteCat(c){
+  const ok=await confirmDialog(t('confirm.deleteCatMsg',{name:catName(c)}),{title:t('confirm.deleteCatTitle')});
+  if(!ok)return;
+  try{await deleteDoc(doc(db,'users',currentUser.uid,'categories',c.docId));toast(t('toast.catDeleted'));}
+  catch(e){console.error(e);toast(t('toast.deleteFail'),'danger');}
+}
+function renderCategoryManage(){
+  ['expense','income'].forEach(type=>{
+    const wrap=$(type==='expense'?'#expenseCatList':'#incomeCatList');if(!wrap)return;
+    const list=CATS[type]||[];
+    if(!list.length){wrap.innerHTML=`<div class="hint">${t('cats.empty')}</div>`;return;}
+    wrap.innerHTML='';
+    list.forEach(c=>{
+      const el=document.createElement('div');el.className='item-row';
+      el.innerHTML=`<div class="emo">${c.emo}</div>
+        <div class="info"><div class="t">${escapeHtml(catName(c))}</div></div>
+        <div class="ctl"><button class="edit">✎</button><button class="del">🗑</button></div>`;
+      el.querySelector('.edit').onclick=()=>openCatEdit(c);
+      el.querySelector('.del').onclick=()=>deleteCat(c);
+      wrap.appendChild(el);
+    });
+  });
+}
 function buildRecDayOptions(){
   const sel=$('#recDay');const cur=sel.value;sel.innerHTML='';
   for(let d=1;d<=28;d++){const o=document.createElement('option');o.value=d;o.textContent=t('rec.dayLabel',{d});sel.appendChild(o);}
@@ -984,6 +1097,7 @@ function activateTab(name){
   $$('#tabs button').forEach(x=>x.classList.toggle('on',x.dataset.tab===name));
   $$('.tab-page').forEach(p=>p.classList.remove('on'));$('#page-'+name).classList.add('on');
   if(name==='budget')renderBudget();
+  if(name==='cats')renderCategoryManage();
 }
 $$('#tabs button').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
 // Khôi phục tab đã xem trước khi F5
@@ -991,13 +1105,13 @@ activateTab(localStorage.getItem('vtm_tab')||'dash');
 
 // Form type segment
 $('#seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-  state.txType=b.dataset.type;state.cat=CATS[state.txType][0].id;
+  state.txType=b.dataset.type;state.cat=(CATS[state.txType][0]||{}).id||'';
   $('#seg').querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
   $('#seg').classList.toggle('exp',state.txType==='income');renderFormCats();
 });
 // Recurring type segment
 $('#recSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-  state.recType=b.dataset.type;state.recCat=CATS[state.recType][0].id;
+  state.recType=b.dataset.type;state.recCat=(CATS[state.recType][0]||{}).id||'';
   $('#recSeg').querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
   $('#recSeg').classList.toggle('exp',state.recType==='income');renderRecCats();
 });
@@ -1075,7 +1189,7 @@ $('#walletModal').addEventListener('click',e=>{if(e.target===$('#walletModal'))$
 // Edit transaction modal
 attachThousands($('#etAmt'));datePicker.attach($('#etDate'));
 $('#etSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-  etType=b.dataset.type;etCat=CATS[etType][0].id;
+  etType=b.dataset.type;etCat=(CATS[etType][0]||{}).id||'';
   $('#etSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));
   $('#etSeg').classList.toggle('exp',etType==='income');renderEtCats();
 });
@@ -1102,6 +1216,15 @@ $('#addRecBtn').onclick=addRecurring;
 
 // Budget
 $('#saveBudgetBtn').onclick=saveBudgetTotal;
+
+// Categories
+$('#addExpenseCatBtn').onclick=()=>openCatAdd('expense');
+$('#addIncomeCatBtn').onclick=()=>openCatAdd('income');
+$('#catSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>setCatModalType(b.dataset.type));
+$('#catCancel').onclick=()=>$('#catModal').classList.remove('show');
+$('#catSave').onclick=saveCat;
+$('#catNameInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveCat();});
+$('#catModal').addEventListener('click',e=>{if(e.target===$('#catModal'))$('#catModal').classList.remove('show');});
 
 // Logout
 $('#logoutBtn').onclick=()=>{if(auth)signOut(auth);};

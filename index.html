@@ -56,8 +56,8 @@
         <div class="av" id="userAv">U</div>
         <div class="nm" id="userName">—<small id="userEmail"></small></div>
         <div class="lang-seg" id="langSeg" title="Ngôn ngữ / Language">
-          <button data-lang="vi">🇻🇳 VI</button>
-          <button data-lang="en">🇬🇧 EN</button>
+          <button data-lang="vi">VI</button>
+          <button data-lang="en">EN</button>
         </div>
         <button class="icon-btn theme-btn" id="themeBtn" title="Đổi giao diện" data-i18n="nav.theme">🎨 Giao diện</button>
         <button class="icon-btn danger" id="logoutBtn" data-i18n="nav.logout">↩ Đăng xuất</button>
@@ -69,6 +69,7 @@
       <button data-tab="wallets" data-i18n="tab.wallets">💳 Ví</button>
       <button data-tab="recurring" data-i18n="tab.recurring">🔁 Định kỳ</button>
       <button data-tab="budget" data-i18n="tab.budget">🎯 Ngân sách</button>
+      <button data-tab="cats" data-i18n="tab.cats">📂 Danh mục</button>
     </div>
 
     <!-- ===== TAB: DASHBOARD ===== -->
@@ -223,6 +224,22 @@
         <div id="catBudgetList"></div>
       </div>
     </div>
+
+    <!-- ===== TAB: CATEGORIES ===== -->
+    <div class="tab-page" id="page-cats">
+      <div class="panel glass" style="margin-bottom:18px">
+        <h2><span class="dot"></span> <span data-i18n="cats.expenseTitle">Danh mục chi tiêu</span>
+          <span class="right"><button class="btn-ghost" id="addExpenseCatBtn" style="padding:8px 14px;font-size:13px" data-i18n="cats.add">➕ Thêm danh mục</button></span>
+        </h2>
+        <div id="expenseCatList" class="cat-manage"></div>
+      </div>
+      <div class="panel glass">
+        <h2><span class="dot"></span> <span data-i18n="cats.incomeTitle">Danh mục thu nhập</span>
+          <span class="right"><button class="btn-ghost" id="addIncomeCatBtn" style="padding:8px 14px;font-size:13px" data-i18n="cats.add">➕ Thêm danh mục</button></span>
+        </h2>
+        <div id="incomeCatList" class="cat-manage"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== TRANSFER MODAL ===== -->
@@ -285,6 +302,23 @@
       <div class="modal-actions">
         <button class="btn-ghost" id="etCancel" data-i18n="btn.cancel">Huỷ</button>
         <button class="btn-grad" id="etSave" style="box-shadow:none" data-i18n="btn.saveChanges">💾 Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CATEGORY MODAL ===== -->
+  <div class="modal-bg" id="catModal">
+    <div class="glass modal">
+      <h3 id="catModalTitle" data-i18n="cats.addTitle">➕ Thêm danh mục</h3>
+      <div class="seg" id="catSeg"><div class="slider"></div>
+        <button class="active" data-type="expense" data-i18n="seg.expense">Chi tiêu</button>
+        <button data-type="income" data-i18n="seg.income">Thu nhập</button>
+      </div>
+      <div class="field"><label data-i18n="cats.name">Tên danh mục</label><input id="catNameInput" maxlength="20" placeholder="VD: Cà phê" data-i18n-ph="cats.namePh" /></div>
+      <div class="field"><label data-i18n="cats.icon">Biểu tượng</label><div class="cats emoji-grid" id="catEmojis"></div></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="catCancel" data-i18n="btn.cancel">Huỷ</button>
+        <button class="btn-grad" id="catSave" style="box-shadow:none" data-i18n="btn.saveChanges">💾 Lưu</button>
       </div>
     </div>
   </div>
