@@ -52,6 +52,7 @@ else{
     }else{
       unsubs.forEach(u=>u&&u());unsubs=[];recurringBusy=false;walletsLoaded=false;recurringLoaded=false;
       state.txs=[];state.wallets=[];state.recurring=[];state.goals=[];state.debts=[];state.bills=[];state.budget={total:0,perCat:{}};
+      const pw=$('#password');if(pw){pw.value='';pw.type='password';}$('#authErr').textContent='';
       renderAll();hide($('#appRoot'));hide($('#loadingCard'));$('#overlay').classList.remove('hide');show($('#authCard'));
     }
   });
