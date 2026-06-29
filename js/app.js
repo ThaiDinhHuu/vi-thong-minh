@@ -1306,7 +1306,7 @@ function paintLangSeg(){$$('#langSeg button, #authLangSeg button').forEach(b=>b.
 $$('#langSeg button, #authLangSeg button').forEach(b=>b.onclick=()=>{if(b.dataset.lang!==S.lang)setLang(b.dataset.lang);});
 
 // Tabs
-function activateTab(name){
+function activateTab(name,fromHistory){
   const btn=$(`#tabs button[data-tab="${name}"]`);
   if(!btn)name='dash';
   state.tab=name;
@@ -1320,9 +1320,23 @@ function activateTab(name){
   if(name==='bills')renderBills();
   if(name==='calendar')renderCalendar();
   if(name==='charts'){renderChart();renderReports();requestAnimationFrame(()=>{if(chart)chart.resize();if(barChart)barChart.resize();});}
+  // Đồng bộ với lịch sử trình duyệt để nút Back quay lại tab trước
+  if(!fromHistory){
+    if(history.state&&history.state.tab===name)history.replaceState({tab:name},'','#'+name);
+    else history.pushState({tab:name},'','#'+name);
+  }
 }
 $$('#tabs button').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));
-activateTab(localStorage.getItem('vtm_tab')||'dash');
+window.addEventListener('popstate',e=>{
+  const name=(e.state&&e.state.tab)||location.hash.slice(1)||localStorage.getItem('vtm_tab')||'dash';
+  activateTab(name,true);
+});
+{
+  let initTab=location.hash.slice(1)||localStorage.getItem('vtm_tab')||'dash';
+  if(!$(`#tabs button[data-tab="${initTab}"]`))initTab='dash';
+  history.replaceState({tab:initTab},'','#'+initTab);
+  activateTab(initTab,true);
+}
 
 // Sidebar collapse (desktop)
 $('#appRoot').classList.toggle('collapsed',localStorage.getItem('vtm_sidebar')==='collapsed');
