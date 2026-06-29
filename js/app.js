@@ -304,7 +304,12 @@ function renderBudgetBanner(){
 /* ===== Render: transaction list ===== */
 let collapsedDays=new Set(), collapsedMonths=new Set(), seenDays=new Set();
 function toggleCollapse(set,key,hdr,wrap){
-  if(set.has(key)){set.delete(key);hdr.classList.remove('collapsed');wrap.classList.remove('collapsed');}
+  if(set.has(key)){
+    set.delete(key);
+    // Dựng nội dung lười: phần đang thu gọn chưa có DOM, mở ra mới dựng (1 lần).
+    if(wrap._build){wrap._build();wrap._build=null;}
+    hdr.classList.remove('collapsed');wrap.classList.remove('collapsed');
+  }
   else{set.add(key);hdr.classList.add('collapsed');wrap.classList.add('collapsed');}
 }
 function renderList(){
@@ -319,7 +324,30 @@ function renderList(){
     let d=m.dMap[dk];if(!d){d=m.dMap[dk]={key:dk,items:[]};m.days.push(d);}
     d.items.push(tr);
   });
-  list.innerHTML='';let idx=0;
+  list.innerHTML='';
+  // Dựng phần tử cho 1 giao dịch.
+  const buildTx=(tr,i)=>{
+    const el=document.createElement('div');el.className='tx';el.style.animationDelay=(i*0.02)+'s';
+    let emo,title,sub,amtCls,amtTxt;
+    if(tr.type==='transfer'){
+      emo='🔄';title=escapeHtml(tr.desc)||t('tx.transfer');
+      sub=`${walletName(tr.fromWallet)} → ${walletName(tr.toWallet)}`;
+      amtCls='tr';amtTxt=fmt(tr.amount);
+    }else{
+      const ci=catInfo(tr.type,tr.cat);emo=ci.emo;title=escapeHtml(tr.desc)||ci.name;
+      sub=`${ci.name}`;amtCls=tr.type==='income'?'in':'out';
+      amtTxt=(tr.type==='income'?'+':'−')+fmt(tr.amount);
+    }
+    const wtag=tr.type!=='transfer'&&tr.walletId?`<span class="wtag">${walletName(tr.walletId)}</span>`:'';
+    el.innerHTML=`<div class="emo">${emo}</div>
+      <div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div>
+      <div class="amt ${amtCls}">${amtTxt}</div>
+      <div class="act">${tr.photo?`<button class="viewp" title="${t('tt.viewPhoto')}">📎</button>`:''}<button class="edit" title="${t('tt.edit')}">✎</button><button class="del" title="${t('tt.delete')}">✕</button></div>`;
+    const vp0=el.querySelector('.viewp');if(vp0)vp0.onclick=()=>openLightbox(tr.photo);
+    el.querySelector('.edit').onclick=()=>openTxEdit(tr);
+    el.querySelector('.del').onclick=()=>removeTx(tr);
+    return el;
+  };
   months.forEach(m=>{
     const mNet=m.items.reduce((s,tr)=>s+(tr.type==='income'?tr.amount:tr.type==='expense'?-tr.amount:0),0);
     const mCol=collapsedMonths.has(m.key);
@@ -332,43 +360,32 @@ function renderList(){
     const mbody=document.createElement('div');mbody.className='month-body'+(mCol?' collapsed':'');
     const mInner=document.createElement('div');mInner.className='mb-inner';mbody.appendChild(mInner);
     mhdr.onclick=()=>toggleCollapse(collapsedMonths,m.key,mhdr,mbody);
-    m.days.forEach(g=>{
-      const net=g.items.reduce((s,tr)=>s+(tr.type==='income'?tr.amount:tr.type==='expense'?-tr.amount:0),0);
-      const dh=dayHeaderInfo(g.key);
-      // Mặc định: chỉ ngày hôm nay mở, các ngày khác tự thu gọn (chỉ áp dụng lần đầu thấy ngày đó)
-      if(!seenDays.has(g.key)){seenDays.add(g.key);if(g.key!==todayISO())collapsedDays.add(g.key);}
-      const dCol=collapsedDays.has(g.key);
-      const hdr=document.createElement('div');hdr.className='month-hdr'+(dCol?' collapsed':'');
-      hdr.innerHTML=`<div class="mt"><span class="day-caret">▾</span> ${dh.tag?`<span class="rel">${dh.tag}</span>`:'📅'} <span class="wd">${dh.wd}</span> ${dh.dd} <span class="cnt">${g.items.length} ${t('count.txShort')}</span></div>
-        <div class="net ${net>=0?'in':'out'}">${net>=0?'+':'−'}${fmt(Math.abs(net))}</div>`;
-      mInner.appendChild(hdr);
-      const dayWrap=document.createElement('div');dayWrap.className='day-items'+(dCol?' collapsed':'');
-      const inner=document.createElement('div');inner.className='di-inner';dayWrap.appendChild(inner);
-      hdr.onclick=()=>toggleCollapse(collapsedDays,g.key,hdr,dayWrap);
-      g.items.forEach(tr=>{
-        const el=document.createElement('div');el.className='tx';el.style.animationDelay=(idx++*0.02)+'s';
-        let emo,title,sub,amtCls,amtTxt;
-        if(tr.type==='transfer'){
-          emo='🔄';title=escapeHtml(tr.desc)||t('tx.transfer');
-          sub=`${walletName(tr.fromWallet)} → ${walletName(tr.toWallet)}`;
-          amtCls='tr';amtTxt=fmt(tr.amount);
-        }else{
-          const ci=catInfo(tr.type,tr.cat);emo=ci.emo;title=escapeHtml(tr.desc)||ci.name;
-          sub=`${ci.name}`;amtCls=tr.type==='income'?'in':'out';
-          amtTxt=(tr.type==='income'?'+':'−')+fmt(tr.amount);
-        }
-        const wtag=tr.type!=='transfer'&&tr.walletId?`<span class="wtag">${walletName(tr.walletId)}</span>`:'';
-        el.innerHTML=`<div class="emo">${emo}</div>
-          <div class="info"><div class="t">${title}</div><div class="d">${sub} ${wtag}</div></div>
-          <div class="amt ${amtCls}">${amtTxt}</div>
-          <div class="act">${tr.photo?`<button class="viewp" title="${t('tt.viewPhoto')}">📎</button>`:''}<button class="edit" title="${t('tt.edit')}">✎</button><button class="del" title="${t('tt.delete')}">✕</button></div>`;
-        const vp0=el.querySelector('.viewp');if(vp0)vp0.onclick=()=>openLightbox(tr.photo);
-        el.querySelector('.edit').onclick=()=>openTxEdit(tr);
-        el.querySelector('.del').onclick=()=>removeTx(tr);
-        inner.appendChild(el);
+    // Dựng nội dung 1 ngày (các giao dịch trong ngày).
+    const buildDay=(g,inner)=>{g.items.forEach((tr,i)=>inner.appendChild(buildTx(tr,i)));};
+    // Dựng toàn bộ thân tháng (header từng ngày + nội dung ngày, có thể dựng lười).
+    const buildMonth=()=>{
+      m.days.forEach(g=>{
+        const net=g.items.reduce((s,tr)=>s+(tr.type==='income'?tr.amount:tr.type==='expense'?-tr.amount:0),0);
+        const dh=dayHeaderInfo(g.key);
+        // Mặc định: chỉ ngày hôm nay mở, các ngày khác tự thu gọn (chỉ áp dụng lần đầu thấy ngày đó)
+        if(!seenDays.has(g.key)){seenDays.add(g.key);if(g.key!==todayISO())collapsedDays.add(g.key);}
+        const dCol=collapsedDays.has(g.key);
+        const hdr=document.createElement('div');hdr.className='month-hdr'+(dCol?' collapsed':'');
+        hdr.innerHTML=`<div class="mt"><span class="day-caret">▾</span> ${dh.tag?`<span class="rel">${dh.tag}</span>`:'📅'} <span class="wd">${dh.wd}</span> ${dh.dd} <span class="cnt">${g.items.length} ${t('count.txShort')}</span></div>
+          <div class="net ${net>=0?'in':'out'}">${net>=0?'+':'−'}${fmt(Math.abs(net))}</div>`;
+        mInner.appendChild(hdr);
+        const dayWrap=document.createElement('div');dayWrap.className='day-items'+(dCol?' collapsed':'');
+        const inner=document.createElement('div');inner.className='di-inner';dayWrap.appendChild(inner);
+        hdr.onclick=()=>toggleCollapse(collapsedDays,g.key,hdr,dayWrap);
+        // Ngày đang thu gọn: hoãn dựng giao dịch tới khi người dùng mở ra.
+        if(dCol)dayWrap._build=()=>buildDay(g,inner);
+        else buildDay(g,inner);
+        mInner.appendChild(dayWrap);
       });
-      mInner.appendChild(dayWrap);
-    });
+    };
+    // Tháng đang thu gọn: hoãn dựng toàn bộ thân tháng tới khi mở ra.
+    if(mCol)mbody._build=buildMonth;
+    else buildMonth();
     block.appendChild(mbody);
     list.appendChild(block);
   });
